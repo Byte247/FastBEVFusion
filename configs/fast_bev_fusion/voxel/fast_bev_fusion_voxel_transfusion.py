@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 # If point cloud range is changed, the models should also change their point cloud range accordingly
-#point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
-#voxel_size = [0.2, 0.2, 0.2]
-
 
 point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
 voxel_size = [0.075, 0.075, 0.2]
@@ -86,7 +83,7 @@ model = dict(
                          num_heads=1,
                          dropout = 0.0,
                          in_lidar_channels=512,
-                         in_cam_channels=512,
+                         in_cam_channels=768,
                          output_dim = 512,
                          norm_cfg=dict(type='SyncBN', requires_grad=True),
                          one_d_norm = dict(type='SyncBN', requires_grad=True),
