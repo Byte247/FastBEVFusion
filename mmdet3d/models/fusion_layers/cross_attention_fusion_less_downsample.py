@@ -268,6 +268,5 @@ class MultiHeadCrossAttentionLessDownsample(nn.Module):
         output = output.view(output.shape[0], output.shape[1], downsiced_lidar_bev_features.shape[-2], downsiced_lidar_bev_features.shape[-1]).contiguous()  # Shape: [batch * 6, 256, 64, 64]
 
         output = self.out_conv(output)
-        output = torch.add(output,lidar_bev_features)
         
         return [output]

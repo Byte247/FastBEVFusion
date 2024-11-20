@@ -22,11 +22,11 @@ model = dict(
     pts_middle_encoder=dict(
         type='SparseEncoder',
         in_channels=5,
-        sparse_shape=[1440, 1440, 41],
+        sparse_shape=[41, 1440, 1440],
         output_channels=128,
         order=('conv', 'norm', 'act'),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
-        encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, [1, 1, 0]), (0, 0)),
+        encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, [0, 1, 1]), (0, 0)),
         block_type='basicblock',
         norm_cfg=dict(type='SyncBN', requires_grad=True),
         freeze_layers=True),
@@ -250,11 +250,12 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=8,
+    samples_per_gpu=4,
     workers_per_gpu=1,
     train=dict(
-         type='CBGSDataset',
-         dataset=dict(
+        type='RepeatDataset',
+        times=1,
+        dataset=dict(
              type=dataset_type,
              data_root=data_root,
              ann_file=data_root + 'nuscenes_infos_train.pkl',
@@ -290,7 +291,7 @@ momentum_config = dict(
     step_ratio_up=0.4)
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=20)
+runner = dict(type='EpochBasedRunner', max_epochs=1)
 
 
 

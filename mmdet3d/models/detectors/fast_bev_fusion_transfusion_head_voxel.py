@@ -573,6 +573,7 @@ def get_points(n_voxels, voxel_size, origin):
             ]
         )
     )
+
     new_origin = origin - n_voxels / 2.0 * voxel_size
     points = points * voxel_size.view(3, 1, 1, 1) + new_origin.view(3, 1, 1, 1)
     return points
