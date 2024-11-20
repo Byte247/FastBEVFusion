@@ -207,6 +207,7 @@ class MultiHeadCrossAttentionLessDownsample(nn.Module):
         self.lidar_embedding = ConvBNReLU(in_lidar_channels, embed_dim, kernel_size=3, stride=2, padding=1, norm_cfg = self.norm_cfg)
 
         self.lidar_camera_cross_attention = Decoder(self.embed_dim, hidden_dim=self.embed_dim, num_heads= num_heads, dropout=dropout, show_weights=False)
+        self.decoder_2 = Decoder(self.embed_dim, hidden_dim=self.embed_dim, num_heads= num_heads, dropout=dropout, show_weights=False)
         
 
         self.cross_attention_layer_norm = nn.LayerNorm(self.embed_dim)
@@ -259,14 +260,21 @@ class MultiHeadCrossAttentionLessDownsample(nn.Module):
         
         #cross-attention
         
-        cross_attention = self.lidar_camera_cross_attention(lidar_patch_embedding, image_patch_embedding)
-        cross_attention = self.cross_attention_layer_norm(torch.add(cross_attention, lidar_patch_embedding))
+        cross_attention_0 = self.lidar_camera_cross_attention(lidar_patch_embedding, image_patch_embedding)
+        cross_attention_0 = self.cross_attention_layer_norm(torch.add(cross_attention_0, lidar_patch_embedding))
+
+        #second decoder
+
+        cross_attention_1 = self.decoder_2(cross_attention_0, cross_attention_0)
+        cross_attention_1 = self.cross_attention_layer_norm(torch.add(cross_attention_1, cross_attention_0))
+
 
 
         # Reshape the 1d tensor back to a 2d representation used in the CenterHead
-        output = cross_attention.permute(0,2,1).contiguous()
+        output = cross_attention_1.permute(0,2,1).contiguous()
         output = output.view(output.shape[0], output.shape[1], downsiced_lidar_bev_features.shape[-2], downsiced_lidar_bev_features.shape[-1]).contiguous()  # Shape: [batch * 6, 256, 64, 64]
 
         output = self.out_conv(output)
+        output = torch.add(output,lidar_bev_features)
         
         return [output]
