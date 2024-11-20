@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 # If point cloud range is changed, the models should also change their point cloud range accordingly
+#point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+#voxel_size = [0.2, 0.2, 0.2]
+
 
 point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
 voxel_size = [0.075, 0.075, 0.2]
@@ -17,15 +20,14 @@ model = dict(
     freeze_2D_neck=False,
     freeze_neck_fuse=False,
     backbone=dict(
-        type='ResNeXt',
-        depth=101,
-        groups=64,
-        base_width=4,
+        type='ResNet',
+        depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
         norm_cfg=dict(type='SyncBN', requires_grad=True),
         norm_eval=True,
+        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50'),
         style='pytorch',
         dcn=dict(type='DCN', deform_groups=1, fallback_on_stride=False),
         stage_with_dcn=(False, True, True, True)
@@ -34,9 +36,9 @@ model = dict(
         type='FPN',
         norm_cfg=dict(type='SyncBN', requires_grad=True),
         in_channels=[256, 512, 1024, 2048],
-        out_channels=128,
+        out_channels=64,
         num_outs=4),
-    neck_fuse=dict(in_channels=128*4, out_channels=96),
+    neck_fuse=dict(in_channels=256, out_channels=64),
     neck_3d=dict(
         type='M2BevNeckTransOnly',
         is_transpose=False),
@@ -83,7 +85,7 @@ model = dict(
                          num_heads=1,
                          dropout = 0.0,
                          in_lidar_channels=512,
-                         in_cam_channels=768,
+                         in_cam_channels=512,
                          output_dim = 512,
                          norm_cfg=dict(type='SyncBN', requires_grad=True),
                          one_d_norm = dict(type='SyncBN', requires_grad=True),
@@ -134,9 +136,9 @@ model = dict(
         norm_on_bbox = True,
         centerness_on_reg = True,
         num_classes=10,
-        in_channels=128,
+        in_channels=64,
         stacked_convs=2,
-        feat_channels=64,
+        feat_channels=32,
         strides=[4, 8, 16, 32],
         regress_ranges=((-1, 64), (64, 128), (128, 256), (256, 1e8)),
         loss_cls=dict(
@@ -311,7 +313,7 @@ test_pipeline = [
     dict(type='Collect3D', keys=['img','points'])]
 
 data = dict(
-    samples_per_gpu=1,
+    samples_per_gpu=2,
     workers_per_gpu=1,
     train=dict(
         type='RepeatDataset',
@@ -386,6 +388,6 @@ find_unused_parameters = True  # todo: fix number of FPN outputs
 log_level = 'INFO'
 #load_from = None
 load_additional_from = None
-load_from = 'https://download.openmmlab.com/mmdetection3d/v0.1.0_models/nuimages_semseg/htc_x101_64x4d_fpn_dconv_c3-c5_coco-20e_16x1_20e_nuim/htc_x101_64x4d_fpn_dconv_c3-c5_coco-20e_16x1_20e_nuim_20201008_211222-0b16ac4b.pth'
+load_from = 'https://download.openmmlab.com/mmdetection3d/v0.1.0_models/nuimages_semseg/cascade_mask_rcnn_r50_fpn_coco-20e_20e_nuim/cascade_mask_rcnn_r50_fpn_coco-20e_20e_nuim_20201009_124951-40963960.pth'
 resume_from = None
 workflow = [('train', 1)]
