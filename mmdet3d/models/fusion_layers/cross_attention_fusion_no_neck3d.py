@@ -82,18 +82,18 @@ class Decoder(nn.Module):
 
 
     def vis_attention_scores(self, weights):
-         
+        # Prepare the attention heatmaps data
         attention_heatmaps = weights.squeeze(0).cpu().detach().numpy()  # Remove batch dimension and convert to NumPy
 
-        # #Create plot objects outside the loop
+        # Create plot objects outside the loop
         fig_heatmap, axs_heatmap = plt.subplots(2)
 
         # Precompute highlighted grid outside the loop
         highlighted_grid = np.zeros((64, 64))
 
-
-        #for i in range(200, 500):
-        i = 304
+        # For demonstration, select a specific index to highlight
+        i = 1940
+        
         # Clear previous plot
         axs_heatmap[0].clear()
         axs_heatmap[1].clear()
@@ -105,22 +105,22 @@ class Decoder(nn.Module):
             prev_col_index = prev_i % 64
             highlighted_grid[prev_row_index, prev_col_index] = 0
         
-        # Update highlighted grid
+        # Update highlighted grid for current index
         row_index = i // 64
         col_index = i % 64
         highlighted_grid[row_index, col_index] = 1
         
-        # Plot attention heatmap
+        # Plot attention heatmap with viridis colormap
         attention_heatmap = attention_heatmaps[i]
         attention_heatmap_2d = attention_heatmap.reshape((64, 64)).T
-        
         axs_heatmap[0].imshow(attention_heatmap_2d, cmap='viridis', interpolation='nearest')
         axs_heatmap[0].set_xlabel('Wide Image Patch X-Axis')
         axs_heatmap[0].set_ylabel('Wide Image Patch Y-Axis')
         axs_heatmap[0].set_title(f'Attention Heatmap for Target Token {i}')
         
-        # Plot highlighted grid
-        axs_heatmap[1].imshow(highlighted_grid, cmap='viridis', interpolation='nearest')
+        # Plot highlighted grid with a different colormap and add a background color
+        axs_heatmap[1].imshow(highlighted_grid, cmap='cividis', interpolation='nearest')
+        axs_heatmap[1].set_facecolor('green')  # Set background color for differentiation
         axs_heatmap[1].set_xlabel('Column Index')
         axs_heatmap[1].set_ylabel('Row Index')
         axs_heatmap[1].set_title(f'Position of Token {i} in 64x64 Grid')
@@ -171,9 +171,8 @@ class MultiHeadCrossAttentionNoNeck(nn.Module):
         self.reduce_camera_spatialy_between = ConvBNReLU(512, self.embed_dim, kernel_size=3, stride=1, padding=1, norm_cfg = self.norm_cfg)
         
         self.reduce_camera_spatialy_2 = ConvBNReLU(self.embed_dim, self.embed_dim, kernel_size=3, stride=2, padding=1, norm_cfg = self.norm_cfg)
-    
 
-        self.lidar_camera_cross_attention = Decoder(self.embed_dim, hidden_dim=self.embed_dim * 2, num_heads= num_heads, dropout=dropout, show_weights=False)
+        self.lidar_camera_cross_attention = Decoder(self.embed_dim, hidden_dim=self.embed_dim * 2, num_heads= num_heads, dropout=dropout, show_weights=True)
         
         self.pos_embed_camera = nn.Parameter(torch.randn(1, self.embed_dim, 4096) * .02) #done as in ViT: https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py, (14 (image hight) * 25 image width * 6 images) / 16 (image patches)
         self.pos_embed_lidar = nn.Parameter(torch.randn(1, self.embed_dim, 4096) * .02) #done as in ViT: https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py, no reduction for now
@@ -254,7 +253,7 @@ class MultiHeadCrossAttentionNoNeck(nn.Module):
 
         # Reshape the 1d tensor back to a 2d representation used in the CenterHead
         output = cross_attention.permute(0,2,1)
-        output = output.view(output.shape[0], output.shape[1], 64, 64)  # Shape: [batch * 6, 256, 64, 64]
+        output = output.view(output.shape[0], output.shape[1], 64, 64)  # Shape: [batch * 6, 512, 64, 64]
 
 
         output = self.upsample_layer_act(self.upsample_layer_norm(self.upsample_layer(output)))
