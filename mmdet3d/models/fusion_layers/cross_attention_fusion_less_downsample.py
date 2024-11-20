@@ -262,11 +262,7 @@ class MultiHeadCrossAttentionLessDownsample(nn.Module):
         #cross-attention
         
         cross_attention_0 = self.lidar_camera_cross_attention(lidar_patch_embedding, image_patch_embedding)
-        cross_attention_0 = self.cross_attention_layer_norm(torch.add(cross_attention_0, lidar_patch_embedding))
-
         cross_attention_1 = self.decoder_2(cross_attention_0,cross_attention_0)
-        cross_attention_1 = self.cross_attention_layer_norm_2(torch.add(cross_attention_0, cross_attention_1))
-
 
         # Reshape the 1d tensor back to a 2d representation used in the CenterHead
         output = cross_attention_1.permute(0,2,1).contiguous()
