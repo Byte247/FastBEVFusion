@@ -45,16 +45,16 @@ model = dict(
     
     #Point Modules:
     pts_voxel_layer=dict(
-        max_num_points=10, voxel_size=voxel_size, max_voxels=(90000, 120000), point_cloud_range=point_cloud_range),
+        max_num_points=10, voxel_size=voxel_size, max_voxels=(120000, 160000), point_cloud_range=point_cloud_range),
     pts_voxel_encoder=dict(type='HardSimpleVFE', num_features=5),
     pts_middle_encoder=dict(
         type='SparseEncoder',
         in_channels=5,
-        sparse_shape=[41, 1024, 1024],
+        sparse_shape=[41, 1440, 1440],
         output_channels=128,
         order=('conv', 'norm', 'act'),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
-        encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, [1, 1, 0]), (0, 0)),
+        encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, [0, 1, 1]), (0, 0)),
         block_type='basicblock',
         norm_cfg=dict(type='SyncBN', requires_grad=True),
         freeze_layers=True),
@@ -107,7 +107,7 @@ model = dict(
         norm_cfg=dict(type='SyncBN', requires_grad=True),
         two_d_norm_cfg=dict(type='SyncBN', requires_grad=True),
         dropout=0.1,
-        bn_momentum=0.1,
+        SyncBN_momentum=0.1,
         activation='relu',
         common_heads=dict(center=(2, 2), height=(1, 2), dim=(3, 2), rot=(2, 2), vel=(2, 2)),
         bbox_coder=dict(
@@ -127,8 +127,8 @@ model = dict(
     ),
     
     
-    camera_n_voxels=(256, 256, 6), 
-    camera_voxel_size=[0.4, 0.4, 1],
+    camera_n_voxels=(256, 256, 8), 
+    camera_voxel_size=[0.421875, 0.421875, 1],
 
     bbox_head_2d=dict(
         type='FCOSHead',
@@ -313,7 +313,7 @@ test_pipeline = [
     dict(type='Collect3D', keys=['img','points'])]
 
 data = dict(
-    samples_per_gpu=2,
+    samples_per_gpu=1,
     workers_per_gpu=1,
     train=dict(
         type='RepeatDataset',
