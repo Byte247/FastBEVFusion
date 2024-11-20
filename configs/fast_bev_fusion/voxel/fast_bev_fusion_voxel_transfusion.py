@@ -223,9 +223,9 @@ data_config = {
     #'crop': (-0.05, 0.05),
     #'rot': (-5.4, 5.4),
     #'flip': True,
-    'resize': 0.0,
-    'crop': 0.0,
-    'rot': 0.0,
+    'resize':(0.0, 0.0),
+    'crop': (0.0, 0.0),
+    'rot': (0.0, 0.0),
     'flip': False,
     # test-aug
     'test_input_size': (900, 1600),
