@@ -17,8 +17,8 @@ class_names = [
 model = dict(
     type='FastBEVFusionTransfusionheadVoxel',
     freeze_2D_backbone=True,
-    freeze_2D_neck=True,
-    freeze_neck_fuse=True,
+    freeze_2D_neck=False,
+    freeze_neck_fuse=False,
     backbone=dict(
         type='ResNet',
         depth=50,
@@ -123,15 +123,16 @@ model = dict(
         # loss_iou=dict(type='CrossEntropyLoss', use_sigmoid=True, reduction='mean', loss_weight=0.0),
         loss_bbox=dict(type='L1Loss', reduction='mean', loss_weight=0.25),
         loss_heatmap=dict(type='GaussianFocalLoss', reduction='mean', loss_weight=1.0),
-        freeze_layers=True
+        freeze_layers=False
     ),
     
     
-    camera_n_voxels=(512, 512, 8), 
-    camera_voxel_size=[0.2, 0.2, 1],
+    camera_n_voxels=(256, 256, 6), 
+    camera_voxel_size=[0.4, 0.4, 1],
 
     bbox_head_2d=dict(
         type='FCOSHead',
+        norm_cfg = dict(type='SyncBN', requires_grad=True),
         norm_on_bbox = True,
         centerness_on_reg = True,
         num_classes=10,
@@ -218,10 +219,14 @@ data_config = {
     'src_size': (900, 1600),
     'input_size': (900, 1600),
     # train-aug
-    'resize': (-0.06, 0.11),
-    'crop': (-0.05, 0.05),
-    'rot': (-5.4, 5.4),
-    'flip': True,
+    #'resize': (-0.06, 0.11),
+    #'crop': (-0.05, 0.05),
+    #'rot': (-5.4, 5.4),
+    #'flip': True,
+    'resize': 0.0,
+    'crop': 0.0,
+    'rot': 0.0,
+    'flip': False,
     # test-aug
     'test_input_size': (900, 1600),
     'test_resize': 0.0,
@@ -311,7 +316,8 @@ data = dict(
     samples_per_gpu=2,
     workers_per_gpu=1,
     train=dict(
-        type='CBGSDataset',
+        type='RepeatDataset',
+        times=1,
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
