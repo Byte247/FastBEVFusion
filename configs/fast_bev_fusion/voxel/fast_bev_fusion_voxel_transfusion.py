@@ -107,7 +107,7 @@ model = dict(
         norm_cfg=dict(type='SyncBN', requires_grad=True),
         two_d_norm_cfg=dict(type='SyncBN', requires_grad=True),
         dropout=0.1,
-        SyncBN_momentum=0.1,
+        bn_momentum=0.1,
         activation='relu',
         common_heads=dict(center=(2, 2), height=(1, 2), dim=(3, 2), rot=(2, 2), vel=(2, 2)),
         bbox_coder=dict(
