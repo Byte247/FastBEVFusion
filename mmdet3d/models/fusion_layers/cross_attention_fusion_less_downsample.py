@@ -203,6 +203,7 @@ class MultiHeadCrossAttentionLessDownsample(nn.Module):
         self.camera_pos_embed = PositionEmbeddingLearned(embed_dim, embed_dim, one_d_norm)
 
         self.camera_embedding = ConvBNReLU(in_cam_channels, embed_dim, kernel_size=3, stride=2, padding=1, norm_cfg = self.norm_cfg)
+        self.camera_downsample = ConvBNReLU(embed_dim, embed_dim, kernel_size=3, stride=2, padding=1, norm_cfg = self.norm_cfg)
 
         self.lidar_embedding = ConvBNReLU(in_lidar_channels, embed_dim, kernel_size=3, stride=2, padding=1, norm_cfg = self.norm_cfg)
 
@@ -252,6 +253,7 @@ class MultiHeadCrossAttentionLessDownsample(nn.Module):
         
         downsiced_lidar_bev_features = self.lidar_embedding(lidar_bev_features)
         camera_bev_features = self.camera_embedding(camera_bev_features)
+        camera_bev_features = self.camera_downsample(camera_bev_features)
 
         # get patch embeddings
         image_patch_embedding = self.create_camera_patches(camera_bev_features)
