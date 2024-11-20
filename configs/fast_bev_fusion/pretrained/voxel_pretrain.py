@@ -22,13 +22,14 @@ model = dict(
     pts_middle_encoder=dict(
         type='SparseEncoder',
         in_channels=5,
-        sparse_shape=[41, 1440, 1440],
+        sparse_shape=[1440, 1440, 41],
         output_channels=128,
         order=('conv', 'norm', 'act'),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
-        encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, [0, 1, 1]), (0, 0)),
+        encoder_paddings=((0, 0, 1), (0, 0, 1), (0, 0, [1, 1, 0]), (0, 0)),
         block_type='basicblock',
-        norm_cfg=dict(type='SyncBN', requires_grad=True)),
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        freeze_layers=True),
     pts_backbone=dict(
         type='SECOND',
         in_channels=256,
@@ -83,7 +84,7 @@ model = dict(
     # model training and testing settings for the head
     train_cfg=dict(
          pts=dict(
-            grid_size=[1440, 1440, 40],
+            grid_size=[1440, 1440, 41],
             assigner=dict(
                 type='HungarianAssigner3D',
                 iou_calculator=dict(type='BboxOverlaps3D', coordinate='lidar'),
@@ -102,7 +103,7 @@ model = dict(
             point_cloud_range = point_cloud_range)),
      test_cfg=dict(
           pts=dict(
-            grid_size=[1440, 1440, 1],
+            grid_size=[1440, 1440, 41],
             post_center_limit_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             max_per_img=500,
             max_pool_nms=False,
@@ -111,10 +112,10 @@ model = dict(
             pc_range=point_cloud_range[:2],
             out_size_factor=out_size_factor,
             voxel_size=[0.075, 0.075],
-            nms_type=None,
-            pre_max_size=1000,
-            post_max_size=83,
-            nms_thr=0.2))    
+            nms_type='rotate',
+            pre_maxsize=1000,
+            post_maxsize=83,
+            nms_thr=0.2))
     )
 
 
@@ -173,7 +174,7 @@ train_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True),
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
-    #dict(type='ObjectSample', db_sampler=db_sampler),
+    dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
         type='GlobalRotScaleTrans',
         rot_range=[-0.3925 * 2, 0.3925 * 2],
@@ -203,6 +204,8 @@ test_pipeline = [
         type='LoadPointsFromMultiSweeps',
         sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
+        pad_empty_sweeps=True,
+        remove_close=True
     ),
     dict(
         type='MultiScaleFlipAug3D',
@@ -273,11 +276,11 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 
-optimizer = dict(type='AdamW', lr=0.00001, weight_decay=0.01)  # for 8gpu * 2sample_per_gpu
-optimizer_config = dict(grad_clip=dict(max_norm=0.1, norm_type=2))
+optimizer = dict(type='AdamW', lr=1e-4, weight_decay=0.01)  
+optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 lr_config = dict(
     policy='cyclic',
-    target_ratio=(10, 0.0001),
+    target_ratio=(10, 1e-4),
     cyclic_times=1,
     step_ratio_up=0.4)
 momentum_config = dict(
@@ -287,7 +290,7 @@ momentum_config = dict(
     step_ratio_up=0.4)
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=10)
+runner = dict(type='EpochBasedRunner', max_epochs=20)
 
 
 
