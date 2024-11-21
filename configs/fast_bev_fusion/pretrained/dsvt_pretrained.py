@@ -304,7 +304,7 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 
-optimizer = dict(type='AdamW', lr=0.005,
+optimizer = dict(type='AdamW', lr=1e-4,
                  weight_decay=0.01)
 
 # max_norm=10 is better for SECOND
@@ -313,7 +313,7 @@ optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
     policy='cyclic',
-    target_ratio=(10, 0.005),
+    target_ratio=(10, 1e-4),
     cyclic_times=1,
     step_ratio_up=0.2)
 momentum_config = dict(
@@ -333,7 +333,7 @@ checkpoint_config = dict(interval=1)
 # For more loggers see
 # https://mmcv.readthedocs.io/en/latest/api.html#mmcv.runner.LoggerHook
 log_config = dict(
-    interval=100,
+    interval=250,
     hooks=[
         dict(type='TextLoggerHook'),
         dict(type='TensorboardLoggerHook')
