@@ -2,7 +2,7 @@ _base_ = [
     '../../_base_/datasets/nus-3d.py'
 ]
 
-point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
 
 out_size_factor = 2
 
@@ -12,26 +12,39 @@ class_names = [
     'motorcycle', 'pedestrian', 'traffic_cone', 'barrier'
 ]
 
-voxel_size = [0.2, 0.2, 8]
+voxel_size = [0.3, 0.3, 8]
 model = dict(
     type='TransFusionHeadDSVT',
     #Point Modules:
+    # pts_voxel_layer=dict(
+    #     max_num_points=10, voxel_size=voxel_size, max_voxels=(60000, 60000), point_cloud_range=point_cloud_range),
+        # pts_voxel_encoder=dict(
+    #     type='PillarFeatureNet',
+    #     in_channels=5,
+    #     feat_channels=[128,128],
+    #     with_distance=False,
+    #     voxel_size=voxel_size,
+    #     norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.01),
+    #     legacy=False),
+
     pts_voxel_layer=dict(
-        max_num_points=20, voxel_size=voxel_size, max_voxels=(30000, 60000), point_cloud_range=point_cloud_range),
-    pts_voxel_encoder=dict(
-        type='PillarFeatureNet',
-        in_channels=5,
-        feat_channels=[128,128],
-        with_distance=False,
+        max_num_points=-1,
+        point_cloud_range=point_cloud_range,
         voxel_size=voxel_size,
-        norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.01),
-        legacy=False),
+        max_voxels=(-1, -1)),
+    pts_voxel_encoder=dict(
+        type='DynamicPillarVFE',
+        num_point_features=4,
+        voxel_size=voxel_size,
+        grid_size=[360,360],
+        point_cloud_range=point_cloud_range,
+        num_filters=[128,128]),
    
     dsvt_backbone=dict(
         type='DSVT',
         model_cfg=dict(
             INPUT_LAYER=dict(
-                sparse_shape= [512, 512, 1],
+                sparse_shape= [360, 360, 1],
                 downsample_stride= [],
                 d_model= [128],
                 set_info= [[90, 4]],
@@ -46,11 +59,11 @@ model = dict(
             dim_feedforward= [256],
             dropout= 0.0,
             activation= "gelu",
-            output_shape= [512, 512],
+            output_shape= [360, 360],
             conv_out_channel= 128)),
 
     pts_middle_encoder=dict(
-        type='PointPillarsScatter', in_channels=128, output_shape=(512, 512)),
+        type='PointPillarsScatter', in_channels=128, output_shape=(360, 360)),
 
     pts_backbone=dict(
         type='BaseBEVResBackbone',
@@ -99,7 +112,7 @@ model = dict(
     # model training and testing settings for the head
     train_cfg=dict(
             pts=dict(
-            grid_size=[512, 512, 8],
+            grid_size=[360, 360, 8],
             assigner=dict(
                 type='HungarianAssigner3D',
                 iou_calculator=dict(type='BboxOverlaps3D', coordinate='lidar'),
@@ -118,7 +131,7 @@ model = dict(
             point_cloud_range = point_cloud_range)),
      test_cfg=dict(
          pts=dict(
-            grid_size=[512, 512, 1],
+            grid_size=[360, 360, 1],
             post_center_limit_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             max_per_img=500,
             max_pool_nms=False,
@@ -129,7 +142,7 @@ model = dict(
             voxel_size=voxel_size[:2],
             nms_type=None,
             pre_max_size=1000,
-            post_max_size=83,
+            post_max_size=100,
             nms_thr=0.2))
     )
 
@@ -189,10 +202,10 @@ train_pipeline = [
         pad_empty_sweeps=True,
         remove_close=True),
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
-    #dict(type='ObjectSample', db_sampler=db_sampler),
+    dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
         type='GlobalRotScaleTrans',
-        rot_range=[-0.3925 * 2, 0.3925 * 2],
+        rot_range=[-0.78539816, 0.78539816],
         scale_ratio_range=[0.9, 1.1],
         translation_std=[0.5, 0.5, 0.5]),
     dict(
@@ -224,7 +237,7 @@ test_pipeline = [
         remove_close=True),
     dict(
         type='MultiScaleFlipAug3D',
-        img_scale=(512, 512),
+        img_scale=(360, 360),
         pts_scale_ratio=1,
         flip=False,
         transforms=[
@@ -264,10 +277,11 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=1,
+    samples_per_gpu=2,
     workers_per_gpu=4,
     train=dict(
-         type='CBGSDataset',
+         type='RepeatDataset',
+         times=1,
          dataset=dict(
              type=dataset_type,
              data_root=data_root,
@@ -290,8 +304,8 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 
-optimizer = dict(type='AdamW', lr=0.00001,
-                 weight_decay=0.05)
+optimizer = dict(type='AdamW', lr=0.005,
+                 weight_decay=0.01)
 
 # max_norm=10 is better for SECOND
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
@@ -299,7 +313,7 @@ optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
     policy='cyclic',
-    target_ratio=(10, 0.0001),
+    target_ratio=(10, 0.005),
     cyclic_times=1,
     step_ratio_up=0.2)
 momentum_config = dict(
@@ -309,7 +323,7 @@ momentum_config = dict(
     step_ratio_up=0.2)
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=20)
+runner = dict(type='EpochBasedRunner', max_epochs=1)
 
 
 
@@ -319,7 +333,7 @@ checkpoint_config = dict(interval=1)
 # For more loggers see
 # https://mmcv.readthedocs.io/en/latest/api.html#mmcv.runner.LoggerHook
 log_config = dict(
-    interval=2000,
+    interval=100,
     hooks=[
         dict(type='TextLoggerHook'),
         dict(type='TensorboardLoggerHook')
