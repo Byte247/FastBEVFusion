@@ -72,7 +72,7 @@ class Decoder(nn.Module):
         
 
         ff_output = self.ff(add_norm_0)
-        output = torch.add(ff_output,add_norm_0)
+        output =  self.norm_ff(torch.add(ff_output,add_norm_0))
         
         return output
     
@@ -208,10 +208,7 @@ class MultiHeadCrossAttentionLessDownsample(nn.Module):
 
         self.lidar_camera_cross_attention = Decoder(self.embed_dim, hidden_dim=self.embed_dim, num_heads= num_heads, dropout=dropout, show_weights=False)
         self.decoder_2 = Decoder(self.embed_dim, hidden_dim=self.embed_dim, num_heads= num_heads, dropout=dropout, show_weights=False)
-        
-
-        self.cross_attention_layer_norm = nn.LayerNorm(self.embed_dim)
-        self.cross_attention_layer_norm_2 = nn.LayerNorm(self.embed_dim)
+    
 
         self.out_conv = UpsampleBNReLU(embed_dim, output_dim, kernel_size=2, stride=2, padding=0, norm_cfg = self.norm_cfg)
 
@@ -269,6 +266,6 @@ class MultiHeadCrossAttentionLessDownsample(nn.Module):
         output = output.view(output.shape[0], output.shape[1], downsiced_lidar_bev_features.shape[-2], downsiced_lidar_bev_features.shape[-1]).contiguous()  # Shape: [batch * 6, 256, 64, 64]
 
         output = self.out_conv(output)
-        output = torch.add(output,lidar_bev_features )
+        output = torch.add(output,lidar_bev_features)
         
         return [output]
