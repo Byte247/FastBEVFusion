@@ -349,7 +349,8 @@ data = dict(
         box_type_3d='LiDAR'))
 
 
-optimizer = dict(type='AdamW', lr=1e-4,
+lr = 1e-5
+optimizer = dict(type='AdamW', lr=lr,
                   weight_decay=0.01,
                   paramwise_cfg=dict(
                   custom_keys={'self.lidar_pos_embed': dict(lr_mult=1.0, decay_mult=.0),
@@ -361,7 +362,7 @@ optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 lr_config = dict(
     policy='cyclic',
-    target_ratio=(10, 1e-4),
+    target_ratio=(10, lr),
     cyclic_times=1,
     step_ratio_up=0.2)
 
