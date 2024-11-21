@@ -83,7 +83,7 @@ model = dict(
     fusion_module = dict(type='MultiHeadCrossAttentionLessDownsample',
                          embed_dim = 512,
                          num_heads=1,
-                         dropout = 0.0,
+                         dropout = 0.1,
                          in_lidar_channels=512,
                          in_cam_channels=1024,
                          output_dim = 512,
