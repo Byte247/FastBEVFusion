@@ -280,8 +280,7 @@ data = dict(
     samples_per_gpu=2,
     workers_per_gpu=4,
     train=dict(
-         type='RepeatDataset',
-         times=1,
+         type='CBGSDataset',
          dataset=dict(
              type=dataset_type,
              data_root=data_root,
@@ -311,19 +310,19 @@ optimizer = dict(type='AdamW', lr=1e-4,
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy
+# learning policy
 lr_config = dict(
-    policy='cyclic',
-    target_ratio=(10, 1e-4),
-    cyclic_times=1,
-    step_ratio_up=0.2)
-momentum_config = dict(
-    policy='cyclic',
-    target_ratio=(0.8947368421052632, 1),
-    cyclic_times=1,
-    step_ratio_up=0.2)
+    policy='poly',
+    warmup='linear',
+    warmup_iters=1000,
+    warmup_ratio=1e-6,
+    power=1.0,
+    min_lr=0,
+    by_epoch=False
+)
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=1)
+runner = dict(type='EpochBasedRunner', max_epochs=20)
 
 
 
