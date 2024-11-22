@@ -79,7 +79,7 @@ class TransFusionHeadPretrainDynamic(MVXTwoStageDetector):
 
 
         voxels, coors = self.voxelize(pts)
-        voxel_features, feature_coors = self.pts_voxel_encoder(voxels,coors)
+        voxel_features, feature_coors = self.pts_voxel_encoder(voxels)
 
         batch_size = coors[-1, 0] + 1
 

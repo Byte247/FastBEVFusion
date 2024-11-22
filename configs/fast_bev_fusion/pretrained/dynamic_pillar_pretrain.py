@@ -23,12 +23,12 @@ model = dict(
         voxel_size=voxel_size,
         max_voxels=(-1, -1)),
     pts_voxel_encoder=dict(
-        type='DynamicPillarVFE',
-        num_point_features=4,
+        type='DynamicPillarFeatureNet',
+        in_channels=4,
+        feat_channels=[64,64],
+        with_distance=False,
         voxel_size=voxel_size,
-        grid_size=[512,512],
-        point_cloud_range=point_cloud_range,
-        num_filters=[64,64]),
+        point_cloud_range=point_cloud_range),
     pts_middle_encoder=dict(
         type='PointPillarsScatter', in_channels=64, output_shape=(512, 512)),
     pts_backbone=dict(
@@ -251,7 +251,7 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
+    samples_per_gpu=1,
     workers_per_gpu=4,
     train=dict(
          type='CBGSDataset',
