@@ -239,6 +239,7 @@ class DynamicPillarFeatureNet(nn.Module):
                  with_cluster_center=True,
                  with_voxel_center=True,
                  voxel_size=(0.2, 0.2, 4),
+                 grid_size=[512, 512],
                  point_cloud_range=(0, -40, -3, 70.4, 40, 1),
                  norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.01),
                  mode='max',
@@ -262,6 +263,9 @@ class DynamicPillarFeatureNet(nn.Module):
         feat_channels = [in_channels] + list(feat_channels)
 
         self.norm_cfg = norm_cfg
+        self.grid_size = grid_size
+
+        self.grid_size = torch.tensor(grid_size).cuda()
 
         pfn_layers = []
         for i in range(len(feat_channels) - 1):
@@ -280,10 +284,10 @@ class DynamicPillarFeatureNet(nn.Module):
         self.y_offset = self.voxel_y / 2 + point_cloud_range[1]
         self.z_offset = self.voxel_z / 2 + point_cloud_range[2]
 
-        self.scale_xy = 512 * 512
-        self.scale_y = 512
+        self.scale_xy = self.grid_size[0] * self.grid_size[1] 
+        self.scale_y = self.grid_size[1] 
 
-        self.grid_size = torch.tensor(512).cuda()
+        #self.grid_size = torch.tensor(512).cuda()
         self.voxel_size = torch.tensor(voxel_size).cuda()
         self.point_cloud_range = torch.tensor(point_cloud_range).cuda()
 
@@ -305,8 +309,10 @@ class DynamicPillarFeatureNet(nn.Module):
     @force_fp32(out_fp16=True)
     def forward(self, points, **kwargs):
 
+
         points_coords = torch.floor((points[:, [1,2]] - self.point_cloud_range[[0,1]]) / self.voxel_size[[0,1]]).int()
         mask = ((points_coords >= 0) & (points_coords < self.grid_size[[0,1]])).all(dim=1)
+
         points = points[mask]
         points_coords = points_coords[mask]
         points_xyz = points[:, [1, 2, 3]].contiguous()

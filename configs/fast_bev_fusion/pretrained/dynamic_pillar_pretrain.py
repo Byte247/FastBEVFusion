@@ -24,8 +24,9 @@ model = dict(
         max_voxels=(-1, -1)),
     pts_voxel_encoder=dict(
         type='DynamicPillarFeatureNet',
-        in_channels=4,
+        in_channels=5,
         feat_channels=[64,64],
+        grid_size=[512,512],
         with_distance=False,
         voxel_size=voxel_size,
         point_cloud_range=point_cloud_range),
@@ -251,8 +252,8 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=4,
+    samples_per_gpu=4,
+    workers_per_gpu=8,
     train=dict(
          type='CBGSDataset',
          dataset=dict(
