@@ -44,7 +44,7 @@ class TransFusionHeadPretrainDynamic(MVXTwoStageDetector):
         if bbox_head is not None:
             del self.pts_bbox_head
     
-    
+    # @torch.no_grad()
     # def voxelize(self, points):
     #     """Apply dynamic voxelization to points.
 
@@ -79,6 +79,7 @@ class TransFusionHeadPretrainDynamic(MVXTwoStageDetector):
 
 
         voxels, coors = self.voxelize(pts)
+
         voxel_features, feature_coors = self.pts_voxel_encoder(voxels)
 
         batch_size = coors[-1, 0] + 1

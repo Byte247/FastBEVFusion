@@ -293,6 +293,7 @@ class DynamicPillarFeatureNet(nn.Module):
 
         self.freeze_layers = freeze_layers
         if self.freeze_layers:
+            print(f"Freeze DynamicPillarFeatureNet")
             for name, module in self.named_modules():
                 # Check if the layer is a normalization layer
                 if isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d, nn.SyncBatchNorm)):
@@ -307,51 +308,65 @@ class DynamicPillarFeatureNet(nn.Module):
         return self.num_filters[-1]
 
     @force_fp32(out_fp16=True)
-    def forward(self, points, **kwargs):
+    def forward(self, points):
+        #print(f"points: {points}")
 
+        # Compute voxel indices for x, y coordinates
+        points_coords = torch.floor(
+            (points[:, [1, 2]] - self.point_cloud_range[[0, 1]]) / self.voxel_size[[0, 1]]
+        ).int()
 
-        points_coords = torch.floor((points[:, [1,2]] - self.point_cloud_range[[0,1]]) / self.voxel_size[[0,1]]).int()
-        mask = ((points_coords >= 0) & (points_coords < self.grid_size[[0,1]])).all(dim=1)
-
+        # Filter out points outside the grid boundaries
+        mask = ((points_coords >= 0) & (points_coords < self.grid_size[[0, 1]])).all(dim=1)
         points = points[mask]
         points_coords = points_coords[mask]
         points_xyz = points[:, [1, 2, 3]].contiguous()
 
-        merge_coords = points[:, 0].int() * self.scale_xy + \
-                       points_coords[:, 0] * self.scale_y + \
-                       points_coords[:, 1]
+        # Assuming points[:, 0] is not a batch index, it is used as is
+        merge_coords = (
+            points[:, 0].long() * self.scale_xy +  # Assuming this is a unique identifier
+            points_coords[:, 0] * self.scale_y +
+            points_coords[:, 1]
+        )
 
-        unq_coords, unq_inv, unq_cnt = torch.unique(merge_coords, return_inverse=True, return_counts=True, dim=0)
+        # Find unique voxel indices and their properties
+        unq_coords, unq_inv, unq_cnt = torch.unique(
+            merge_coords, return_inverse=True, return_counts=True, dim=0
+        )
 
+        # Compute cluster features (offsets from voxel mean)
         points_mean = torch_scatter.scatter_mean(points_xyz, unq_inv, dim=0)
         f_cluster = points_xyz - points_mean[unq_inv, :]
 
+        # Compute offsets from voxel center
         f_center = torch.zeros_like(points_xyz)
-        f_center[:, 0] = points_xyz[:, 0] - (points_coords[:, 0].to(points_xyz.dtype) * self.voxel_x + self.x_offset)
-        f_center[:, 1] = points_xyz[:, 1] - (points_coords[:, 1].to(points_xyz.dtype) * self.voxel_y + self.y_offset)
+        f_center[:, 0] = points_xyz[:, 0] - (
+            points_coords[:, 0].to(points_xyz.dtype) * self.voxel_x + self.x_offset
+        )
+        f_center[:, 1] = points_xyz[:, 1] - (
+            points_coords[:, 1].to(points_xyz.dtype) * self.voxel_y + self.y_offset
+        )
         f_center[:, 2] = points_xyz[:, 2] - self.z_offset
 
-        
+        # Concatenate features
         features = [points[:, 1:], f_cluster, f_center]
-
-
-        
         features = torch.cat(features, dim=-1)
 
+        # Pass through PFN layers
         for pfn in self.pfn_layers:
             features = pfn(features, unq_inv)
 
-        # generate voxel coordinates
+        # Generate voxel coordinates
         unq_coords = unq_coords.int()
-        voxel_coords = torch.stack((unq_coords // self.scale_xy,
-                                    (unq_coords % self.scale_xy) // self.scale_y,
-                                    unq_coords % self.scale_y,
-                                    torch.zeros(unq_coords.shape[0]).to(unq_coords.device).int()
-                                    ), dim=1)
-        voxel_coords = voxel_coords[:, [0, 3, 2, 1]]
+        voxel_coords = torch.stack((
+            torch.zeros(unq_coords.shape[0], device=unq_coords.device).int(),  # Batch index (zero since no batching)
+            torch.zeros(unq_coords.shape[0], device=unq_coords.device).int(),  #z (zero since no height)
+            (unq_coords % self.scale_xy) // self.scale_y,  # Voxel y
+            unq_coords % self.scale_y                      # Voxel x
+        ), dim=1)
 
-        #batch_dict['pillar_features'] = batch_dict['voxel_features'] = features
-        #batch_dict['voxel_coords'] = voxel_coords
+        # Ensure voxel coordinates are correctly ordered (z, y, x)
+        voxel_coords = voxel_coords[:, [0, 1, 2, 3]]
 
         return features, voxel_coords
 

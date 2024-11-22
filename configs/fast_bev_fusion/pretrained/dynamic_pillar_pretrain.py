@@ -252,7 +252,7 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
+    samples_per_gpu=2,
     workers_per_gpu=8,
     train=dict(
          type='CBGSDataset',
@@ -278,7 +278,7 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 
-lr = 1e-5
+lr = 1e-3
 
 optimizer = dict(type='AdamW', lr=lr,
                  weight_decay=0.01)
