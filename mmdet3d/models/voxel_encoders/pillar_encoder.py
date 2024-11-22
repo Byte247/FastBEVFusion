@@ -303,7 +303,7 @@ class DynamicPillarFeatureNet(nn.Module):
         return self.num_filters[-1]
 
     @force_fp32(out_fp16=True)
-    def forward(self, points, **kwargs):
+    def forward(self, points, coors):
 
         points_coords = torch.floor((points[:, [1,2]] - self.point_cloud_range[[0,1]]) / self.voxel_size[[0,1]]).int()
         mask = ((points_coords >= 0) & (points_coords < self.grid_size[[0,1]])).all(dim=1)
