@@ -15,31 +15,18 @@ class_names = [
 voxel_size = [0.3, 0.3, 8]
 model = dict(
     type='TransFusionHeadDSVT',
-    #Point Modules:
-    # pts_voxel_layer=dict(
-    #     max_num_points=10, voxel_size=voxel_size, max_voxels=(60000, 60000), point_cloud_range=point_cloud_range),
-        # pts_voxel_encoder=dict(
-    #     type='PillarFeatureNet',
-    #     in_channels=5,
-    #     feat_channels=[128,128],
-    #     with_distance=False,
-    #     voxel_size=voxel_size,
-    #     norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.01),
-    #     legacy=False),
-
     pts_voxel_layer=dict(
         max_num_points=-1,
         point_cloud_range=point_cloud_range,
         voxel_size=voxel_size,
         max_voxels=(-1, -1)),
     pts_voxel_encoder=dict(
-        type='DynamicPillarVFE',
-        num_point_features=4,
+        type='DynamicPillarFeatureNet',
+        in_channels=5,
+        feat_channels=[128],
+        with_distance=False,
         voxel_size=voxel_size,
-        grid_size=[360,360],
-        point_cloud_range=point_cloud_range,
-        num_filters=[128,128]),
-   
+        point_cloud_range=point_cloud_range),
     dsvt_backbone=dict(
         type='DSVT',
         model_cfg=dict(
