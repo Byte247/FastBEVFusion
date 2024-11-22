@@ -22,7 +22,7 @@ model = dict(
     pts_middle_encoder=dict(
         type='SparseEncoder',
         in_channels=5,
-        sparse_shape=[41, 1440, 1440],
+        sparse_shape=[40, 1440, 1440],
         output_channels=128,
         order=('conv', 'norm', 'act'),
         encoder_channels=((16, 16, 32), (32, 32, 64), (64, 64, 128), (128, 128)),
@@ -69,7 +69,7 @@ model = dict(
         bbox_coder=dict(
             type='TransFusionBBoxCoder',
             pc_range=point_cloud_range[:2],
-            voxel_size=[0.075, 0.075],
+            voxel_size=voxel_size[:2],
             out_size_factor=out_size_factor,
             post_center_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             score_threshold=0.0,
@@ -84,7 +84,7 @@ model = dict(
     # model training and testing settings for the head
     train_cfg=dict(
          pts=dict(
-            grid_size=[1440, 1440, 41],
+            grid_size=[1440, 1440, 40],
             assigner=dict(
                 type='HungarianAssigner3D',
                 iou_calculator=dict(type='BboxOverlaps3D', coordinate='lidar'),
@@ -92,7 +92,7 @@ model = dict(
                 reg_cost=dict(type='BBoxBEVL1Cost', weight=0.25),
                 iou_cost=dict(type='IoU3DCost', weight=0.25)
             ),
-            voxel_size=[0.075, 0.075],
+            voxel_size=voxel_size,
             out_size_factor=out_size_factor,
             dense_reg=1,
             gaussian_overlap=0.1,
@@ -103,7 +103,7 @@ model = dict(
             point_cloud_range = point_cloud_range)),
      test_cfg=dict(
           pts=dict(
-            grid_size=[1440, 1440, 41],
+            grid_size=[1440, 1440, 40],
             post_center_limit_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             max_per_img=500,
             max_pool_nms=False,
@@ -111,7 +111,7 @@ model = dict(
             score_threshold=0.0,
             pc_range=point_cloud_range[:2],
             out_size_factor=out_size_factor,
-            voxel_size=[0.075, 0.075],
+            voxel_size=voxel_size[:2],
             nms_type='rotate',
             pre_maxsize=1000,
             post_maxsize=83,
@@ -253,8 +253,7 @@ data = dict(
     samples_per_gpu=4,
     workers_per_gpu=1,
     train=dict(
-        type='RepeatDataset',
-        times=1,
+        type='CBGSDataset',
         dataset=dict(
              type=dataset_type,
              data_root=data_root,
@@ -291,7 +290,7 @@ momentum_config = dict(
     step_ratio_up=0.4)
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=1)
+runner = dict(type='EpochBasedRunner', max_epochs=20)
 
 
 
