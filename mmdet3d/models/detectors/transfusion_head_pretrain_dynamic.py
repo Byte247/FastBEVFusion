@@ -45,30 +45,30 @@ class TransFusionHeadPretrainDynamic(MVXTwoStageDetector):
             del self.pts_bbox_head
     
     
-    def voxelize(self, points):
-        """Apply dynamic voxelization to points.
+    # def voxelize(self, points):
+    #     """Apply dynamic voxelization to points.
 
-        Args:
-            points (list[torch.Tensor]): Points of each sample.
+    #     Args:
+    #         points (list[torch.Tensor]): Points of each sample.
 
-        Returns:
-            tuple[torch.Tensor]: Concatenated points, number of points
-                per voxel, and coordinates.
-        """
-        voxels, coors, grid_size = [], [], []
-        for res in points:
-            res_voxels, res_coors, grid_size = self.pts_voxel_layer(res)
-            voxels.append(res_voxels)
-            coors.append(res_coors)
-            grid_size.append(grid_size)
-        voxels = torch.cat(voxels, dim=0)
-        grid_size = torch.cat(grid_size, dim=0)
-        coors_batch = []
-        for i, coor in enumerate(coors):
-            coor_pad = F.pad(coor, (1, 0), mode='constant', value=i)
-            coors_batch.append(coor_pad)
-        coors_batch = torch.cat(coors_batch, dim=0)
-        return voxels, coors_batch, grid_size
+    #     Returns:
+    #         tuple[torch.Tensor]: Concatenated points, number of points
+    #             per voxel, and coordinates.
+    #     """
+    #     voxels, coors, grid_size = [], [], []
+    #     for res in points:
+    #         res_voxels, res_coors, grid_size = self.pts_voxel_layer(res)
+    #         voxels.append(res_voxels)
+    #         coors.append(res_coors)
+    #         grid_size.append(grid_size)
+    #     voxels = torch.cat(voxels, dim=0)
+    #     grid_size = torch.cat(grid_size, dim=0)
+    #     coors_batch = []
+    #     for i, coor in enumerate(coors):
+    #         coor_pad = F.pad(coor, (1, 0), mode='constant', value=i)
+    #         coors_batch.append(coor_pad)
+    #     coors_batch = torch.cat(coors_batch, dim=0)
+    #     return voxels, coors_batch, grid_size
 
     def extract_pts_feat(self, pts, img_feat, img_metas):
         """Extract features of points."""
@@ -84,7 +84,7 @@ class TransFusionHeadPretrainDynamic(MVXTwoStageDetector):
         batch_size = coors[-1, 0] + 1
 
         #x = self.pts_middle_encoder(voxel_features, coors, batch_size)
-        x = self.pts_middle_encoder(voxel_features, feature_coors, batch_size)
+        x = self.pts_middle_encoder(voxel_features, coors, batch_size)
         if self.with_pts_backbone:
             x = self.pts_backbone(x)
         
