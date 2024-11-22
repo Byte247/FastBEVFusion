@@ -86,7 +86,7 @@ model = dict(
     # model training and testing settings for the head
     train_cfg=dict(
             pts=dict(
-            grid_size=[512, 512, 8],
+            grid_size=[512, 512, 1],
             assigner=dict(
                 type='HungarianAssigner3D',
                 iou_calculator=dict(type='BboxOverlaps3D', coordinate='lidar'),
