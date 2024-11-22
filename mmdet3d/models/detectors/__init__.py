@@ -29,6 +29,7 @@ from .fast_bev_fusion_no_neck import FastBEVFusionNoNeck
 from .transfusion_head_pretrain import TransFusionHeadPretrain
 from .fast_bev_fusion_transfusion_head_dsvt import FastBEVFusionTransfusionheadDSVT
 from .transfusion_head_dsvt_pretrain import TransFusionHeadDSVT
+from .transfusion_head_pretrain_dynamic import TransFusionHeadPretrainDynamic
 
 
 __all__ = [
@@ -40,5 +41,5 @@ __all__ = [
     'FastBEVFusionCenterheadPretrained', 'FastBEVFusionCenterheadLarge',
     "FastBEVFusionCenterheadVoxel", "FastBEVFusionTransfusionheadPillar",
     "FastBEVFusionNoNeck", "FastBEVFusionTransfusionheadVoxel","TransFusionHeadPretrain",
-    "FastBEVFusionTransfusionheadDSVT", "TransFusionHeadDSVT"
+    "FastBEVFusionTransfusionheadDSVT", "TransFusionHeadDSVT","TransFusionHeadPretrainDynamic"
 ]

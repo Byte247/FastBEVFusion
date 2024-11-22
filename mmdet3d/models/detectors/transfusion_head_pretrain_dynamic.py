@@ -7,17 +7,15 @@ from .mvx_two_stage import MVXTwoStageDetector
 from IPython import embed
 import torch.nn.functional as F
 from .. import builder
-from mmcv.runner import force_fp32
 
 @DETECTORS.register_module()
-class TransFusionHeadDSVT(MVXTwoStageDetector):
+class TransFusionHeadPretrainDynamic(MVXTwoStageDetector):
     """Base class of Multi-modality VoxelNet."""
 
     def __init__(self,
                  pts_voxel_layer=None,
                  pts_voxel_encoder=None,
                  pts_middle_encoder=None,
-                 dsvt_backbone=None,
                  pts_fusion_layer=None,
                  img_backbone=None,
                  pts_backbone=None,
@@ -30,7 +28,7 @@ class TransFusionHeadDSVT(MVXTwoStageDetector):
                  test_cfg=None,
                  pretrained=None,
                  init_cfg=None):
-        super(TransFusionHeadDSVT,
+        super(TransFusionHeadPretrainDynamic,
               self).__init__(pts_voxel_layer, pts_voxel_encoder,
                              pts_middle_encoder, pts_fusion_layer,
                              img_backbone, pts_backbone, img_neck, pts_neck,
@@ -43,39 +41,58 @@ class TransFusionHeadDSVT(MVXTwoStageDetector):
         bbox_head.update(test_cfg=pts_test_cfg)
         self.bbox_head = builder.build_head(bbox_head)
 
-        self.dsvt_backbone = builder.build_backbone(dsvt_backbone)
-
         if bbox_head is not None:
             del self.pts_bbox_head
     
     
-    # def voxelize(self, points):
-    #     """Apply dynamic voxelization to points.
+    def voxelize(self, points):
+        """Apply dynamic voxelization to points.
 
-    #     Args:
-    #         points (list[torch.Tensor]): Points of each sample.
+        Args:
+            points (list[torch.Tensor]): Points of each sample.
 
-    #     Returns:
-    #         tuple[torch.Tensor]: Concatenated points, number of points
-    #             per voxel, and coordinates.
-    #     """
-    #     voxels, coors, grid_size = [], [], []
-    #     for res in points:
-    #         res_voxels, res_coors, grid_size = self.pts_voxel_layer(res)
-    #         voxels.append(res_voxels)
-    #         coors.append(res_coors)
-    #         grid_size.append(grid_size)
-    #     voxels = torch.cat(voxels, dim=0)
-    #     grid_size = torch.cat(grid_size, dim=0)
-    #     coors_batch = []
-    #     for i, coor in enumerate(coors):
-    #         coor_pad = F.pad(coor, (1, 0), mode='constant', value=i)
-    #         coors_batch.append(coor_pad)
-    #     coors_batch = torch.cat(coors_batch, dim=0)
-    #     return voxels, coors_batch, grid_size
+        Returns:
+            tuple[torch.Tensor]: Concatenated points, number of points
+                per voxel, and coordinates.
+        """
+        voxels, coors, grid_size = [], [], []
+        for res in points:
+            res_voxels, res_coors, grid_size = self.pts_voxel_layer(res)
+            voxels.append(res_voxels)
+            coors.append(res_coors)
+            grid_size.append(grid_size)
+        voxels = torch.cat(voxels, dim=0)
+        grid_size = torch.cat(grid_size, dim=0)
+        coors_batch = []
+        for i, coor in enumerate(coors):
+            coor_pad = F.pad(coor, (1, 0), mode='constant', value=i)
+            coors_batch.append(coor_pad)
+        coors_batch = torch.cat(coors_batch, dim=0)
+        return voxels, coors_batch, grid_size
+
+    def extract_pts_feat(self, pts, img_feat, img_metas):
+        """Extract features of points."""
+
+        #voxels, num_points, coors = self.voxelize(pts)
+
+        #voxel_features = self.pts_voxel_encoder(voxels, num_points, coors)
+
+
+        voxels, coors = self.voxelize(pts)
+        voxel_features, feature_coors = self.pts_voxel_encoder(voxels)
+
+        batch_size = coors[-1, 0] + 1
+
+        #x = self.pts_middle_encoder(voxel_features, coors, batch_size)
+        x = self.pts_middle_encoder(voxel_features, feature_coors, batch_size)
+        if self.with_pts_backbone:
+            x = self.pts_backbone(x)
+        
+        x = self.pts_neck(x)
+
+        return x
     
     @torch.no_grad()
-    @force_fp32()
     def voxelize(self, points):
         """Apply dynamic voxelization to points.
 
@@ -97,74 +114,6 @@ class TransFusionHeadDSVT(MVXTwoStageDetector):
             coors_batch.append(coor_pad)
         coors_batch = torch.cat(coors_batch, dim=0)
         return points, coors_batch
-
-    # def extract_pts_feat(self, pts, img_feats, img_metas):
-    #     """Extract features of points."""
-
-    #     voxels, num_points, coors = self.voxelize(pts)
-
-    #     voxel_features = self.pts_voxel_encoder(voxels, num_points, coors)
-    #     batch_size = coors[-1, 0] + 1
-
-    #     pillar_features, voxel_coords = self.dsvt_backbone(voxel_features, coors)
-        
-
-    #     x = self.pts_middle_encoder(pillar_features, voxel_coords, batch_size)
-        
-    #     if self.with_pts_backbone:
-    #         x = self.pts_backbone(x)
-
-    #     if self.with_pts_neck:
-    #         x = self.pts_neck(x)
-
-
-    #     return x
-    
-    def extract_pts_feat(self, points, img_feats, img_metas):
-        """Extract features from points."""
-        voxels, coors = self.voxelize(points)
-        voxel_features, feature_coors = self.pts_voxel_encoder(voxels)
-
-        batch_size = coors[-1, 0].item() + 1
-        pillar_features, voxel_coords = self.dsvt_backbone(voxel_features, coors)
-        
-
-        x = self.pts_middle_encoder(pillar_features, voxel_coords, batch_size)
-        
-        if self.with_pts_backbone:
-            x = self.pts_backbone(x)
-
-        if self.with_pts_neck:
-            x = self.pts_neck(x)
-
-
-        return x
-    
-    # @torch.no_grad()
-    # def voxelize(self, points):
-    #     """Apply dynamic voxelization to points.
-
-    #     Args:
-    #         points (list[torch.Tensor]): Points of each sample.
-
-    #     Returns:
-    #         tuple[torch.Tensor]: Concatenated points, number of points
-    #             per voxel, and coordinates.
-    #     """
-    #     voxels, coors, num_points = [], [], []
-    #     for res in points:
-    #         res_voxels, res_coors, res_num_points = self.pts_voxel_layer(res)
-    #         voxels.append(res_voxels)
-    #         coors.append(res_coors)
-    #         num_points.append(res_num_points)
-    #     voxels = torch.cat(voxels, dim=0)
-    #     num_points = torch.cat(num_points, dim=0)
-    #     coors_batch = []
-    #     for i, coor in enumerate(coors):
-    #         coor_pad = F.pad(coor, (1, 0), mode='constant', value=i)
-    #         coors_batch.append(coor_pad)
-    #     coors_batch = torch.cat(coors_batch, dim=0)
-    #     return voxels, num_points, coors_batch
 
     def forward_pts_train(self,
                           pts_feats,
