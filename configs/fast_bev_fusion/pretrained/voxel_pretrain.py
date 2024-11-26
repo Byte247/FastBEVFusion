@@ -170,8 +170,7 @@ train_pipeline = [
         sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         file_client_args=file_client_args,
-        pad_empty_sweeps=True,
-        remove_close=True),
+        pad_empty_sweeps=True),
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
     dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
@@ -203,8 +202,7 @@ test_pipeline = [
         type='LoadPointsFromMultiSweeps',
         sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
-        pad_empty_sweeps=True,
-        remove_close=True
+        pad_empty_sweeps=True
     ),
     dict(
         type='MultiScaleFlipAug3D',
@@ -239,8 +237,7 @@ eval_pipeline = [
         sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         file_client_args=file_client_args,
-        pad_empty_sweeps=True,
-        remove_close=True),
+        pad_empty_sweeps=True),
     dict(
         type='DefaultFormatBundle3D',
         class_names=class_names,
