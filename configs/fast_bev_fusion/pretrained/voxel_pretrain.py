@@ -272,7 +272,7 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 
-lr = 1e-4
+lr = 1e-5
 
 optimizer = dict(type='AdamW', lr=lr,
                  weight_decay=0.01)
@@ -285,7 +285,7 @@ lr_config = dict(
     policy='poly',
     warmup='linear',
     warmup_iters=1000,
-    warmup_ratio=1e-6,
+    warmup_ratio=1e-7,
     power=1.0,
     min_lr=0,
     by_epoch=False
