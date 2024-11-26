@@ -78,10 +78,6 @@ class SECOND(BaseModule):
         if freeze_layers:
             print("Freeze Second layers")
             for name, module in self.named_modules():
-                # Check if the layer is a normalization layer
-                if isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d, nn.SyncBatchNorm)):
-                    continue  # Skip freezing normalization layers
-
                 # Freeze the parameters of non-normalization layers
                 for param in module.parameters():
                     param.requires_grad = False

@@ -40,6 +40,8 @@ class DSVT(nn.Module):
         self.reduction_type = self.model_cfg.get('reduction_type', 'attention')
         # save GPU memory
         self.use_torch_ckpt = self.model_cfg.get('ues_checkpoint', False)
+
+        self.freeze_layers = self.model_cfg.freeze_layers
  
         # Sparse Regional Attention Blocks
         stage_num = len(block_name)
@@ -83,6 +85,14 @@ class DSVT(nn.Module):
         self.num_point_features = self.model_cfg.conv_out_channel
 
         self._reset_parameters()
+
+        if self.freeze_layers:
+
+            for name, module in self.named_modules():
+
+                # Freeze the parameters of non-normalization layers
+                for param in module.parameters():
+                    param.requires_grad = False
 
     def forward(self, voxel_features, voxel_coords):
         '''

@@ -130,9 +130,6 @@ class PillarFeatureNet(nn.Module):
         self.freeze_layers = freeze_layers
         if self.freeze_layers:
             for name, module in self.named_modules():
-                # Check if the layer is a normalization layer
-                if isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d, nn.SyncBatchNorm)):
-                    continue  # Skip freezing normalization layers
 
                 # Freeze the parameters of non-normalization layers
                 for param in module.parameters():
@@ -242,7 +239,8 @@ class DynamicPillarFeatureNet(PillarFeatureNet):
                  voxel_size=(0.2, 0.2, 4),
                  point_cloud_range=(0, -40, -3, 70.4, 40, 1),
                  norm_cfg=dict(type='BN1d', eps=1e-3, momentum=0.01),
-                 mode='max'):
+                 mode='max',
+                 freeze_layers = False):
         super(DynamicPillarFeatureNet, self).__init__(
             in_channels,
             feat_channels,
@@ -256,6 +254,7 @@ class DynamicPillarFeatureNet(PillarFeatureNet):
         self.fp16_enabled = False
         feat_channels = [self.in_channels] + list(feat_channels)
         pfn_layers = []
+        self.freeze_layers = freeze_layers
         # TODO: currently only support one PFNLayer
 
         for i in range(len(feat_channels) - 1):
@@ -274,6 +273,14 @@ class DynamicPillarFeatureNet(PillarFeatureNet):
                                           (mode != 'max'))
         self.cluster_scatter = DynamicScatter(
             voxel_size, point_cloud_range, average_points=True)
+        
+        if self.freeze_layers:
+
+            for name, module in self.named_modules():
+
+                # Freeze the parameters
+                for param in module.parameters():
+                    param.requires_grad = False
 
     def map_voxel_center_to_point(self, pts_coors, voxel_mean, voxel_coors):
         """Map the centers of voxels to its corresponding points.
