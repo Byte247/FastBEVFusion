@@ -26,7 +26,8 @@ model = dict(
         feat_channels=[128, 128],
         with_distance=False,
         voxel_size=voxel_size,
-        point_cloud_range=point_cloud_range),
+        point_cloud_range=point_cloud_range,
+        norm_cfg=dict(type='SyncBN', requires_grad=True)),
     dsvt_backbone=dict(
         type='DSVT',
         model_cfg=dict(
@@ -187,10 +188,9 @@ train_pipeline = [
         sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         file_client_args=file_client_args,
-        pad_empty_sweeps=True,
-        remove_close=True),
+        pad_empty_sweeps=True),
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
-    #dict(type='ObjectSample', db_sampler=db_sampler),
+    dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
         type='GlobalRotScaleTrans',
         rot_range=[-0.78539816, 0.78539816],
@@ -221,8 +221,7 @@ test_pipeline = [
         sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         file_client_args=file_client_args,
-        pad_empty_sweeps=True,
-        remove_close=True),
+        pad_empty_sweeps=True),
     dict(
         type='MultiScaleFlipAug3D',
         img_scale=(360, 360),
@@ -255,8 +254,7 @@ eval_pipeline = [
         sweeps_num=10,
         use_dim=[0, 1, 2, 3, 4],
         file_client_args=file_client_args,
-        pad_empty_sweeps=True,
-        remove_close=True),
+        pad_empty_sweeps=True),
     dict(
         type='DefaultFormatBundle3D',
         class_names=class_names,
@@ -265,8 +263,8 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=2,
-    workers_per_gpu=4,
+    samples_per_gpu=8,
+    workers_per_gpu=1,
     train=dict(
          type='CBGSDataset',
          dataset=dict(
@@ -294,21 +292,22 @@ input_modality = dict(
 lr = 1e-4
 
 optimizer = dict(type='AdamW', lr=lr,
-                 weight_decay=0.01)
+                 weight_decay=0.05)
 
 # max_norm=10 is better for SECOND
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy
 lr_config = dict(
-    policy='poly',
-    warmup='linear',
-    warmup_iters=1000,
-    warmup_ratio=1e-6,
-    power=1.0,
-    min_lr=0,
-    by_epoch=False
-)
+    policy='cyclic',
+    target_ratio=(10, lr),
+    cyclic_times=1,
+    step_ratio_up=0.4)
+momentum_config = dict(
+    policy='cyclic',
+    target_ratio=(0.95, 0.85),
+    cyclic_times=1,
+    step_ratio_up=0.4)
 
 # runtime settings
 runner = dict(type='EpochBasedRunner', max_epochs=20)

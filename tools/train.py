@@ -100,6 +100,7 @@ def parse_args():
         '-d', '--debug',
         action='store_true',
         help='automatically scale lr with the number of gpus')
+    parser.add_argument('--sync_bn', action='store_true', default=False, help='whether to use sync bn')
     args = parser.parse_args()
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
@@ -224,6 +225,10 @@ def main():
         cfg.model,
         train_cfg=cfg.get('train_cfg'),
         test_cfg=cfg.get('test_cfg'))
+    
+    if args.sync_bn:
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        
     model.init_weights() #init weights from the load-from
 
 
