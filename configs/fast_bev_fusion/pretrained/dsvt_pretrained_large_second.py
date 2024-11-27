@@ -56,7 +56,7 @@ model = dict(
 
     pts_backbone=dict(
         type='SECOND',
-        in_channels=64,
+        in_channels=128,
         out_channels=[64, 128, 256],
         layer_nums=[3, 5, 5],
         layer_strides=[2, 2, 2],
