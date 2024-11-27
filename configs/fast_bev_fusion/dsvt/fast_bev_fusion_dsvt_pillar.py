@@ -21,7 +21,7 @@ model = dict(
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        norm_cfg=dict(type='BN', requires_grad=True),
         norm_eval=True,
         init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50'),
         style='pytorch',
@@ -30,7 +30,7 @@ model = dict(
     ),
     neck=dict(
         type='FPN',
-        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        norm_cfg=dict(type='BN', requires_grad=True),
         in_channels=[256, 512, 1024, 2048],
         out_channels=64,
         num_outs=4),
@@ -41,25 +41,49 @@ model = dict(
 
     #Point Modules:
     pts_voxel_layer=dict(
-        max_num_points=20, voxel_size=voxel_size, max_voxels=(30000, 60000), point_cloud_range=point_cloud_range),
+        max_num_points=-1,
+        point_cloud_range=point_cloud_range,
+        voxel_size=voxel_size,
+        max_voxels=(-1, -1)),
     pts_voxel_encoder=dict(
-        type='PillarFeatureNet',
+        type='DynamicPillarFeatureNet',
         in_channels=5,
-        feat_channels=[64,64],
+        feat_channels=[128, 128],
         with_distance=False,
-        voxel_size=(0.2, 0.2, 8),
-        norm_cfg=dict(type='SyncBN', eps=1e-3, momentum=0.01),
-        legacy=False,
-        freeze_layers=True),
+        voxel_size=voxel_size,
+        point_cloud_range=point_cloud_range),
+    dsvt_backbone=dict(
+        type='DSVT',
+        model_cfg=dict(
+            INPUT_LAYER=dict(
+                sparse_shape= [512, 512, 1],
+                downsample_stride= [],
+                d_model= [128],
+                set_info= [[90, 4]],
+                window_shape= [[30, 30, 1]],
+                hybrid_factor= [1, 1, 1], # x, y, z,
+                shifts_list= [[[0, 0, 0], [15, 15, 0]]],
+                normalize_pos= False),
+            block_name= ['DSVTBlock'],
+            set_info= [[90, 4]],
+            d_model= [128],
+            nhead= [8],
+            dim_feedforward= [256],
+            dropout= 0.0,
+            activation= "gelu",
+            output_shape= [512, 512],
+            conv_out_channel= 128,
+            freeze_layers = False)),
+
     pts_middle_encoder=dict(
-        type='PointPillarsScatter', in_channels=64, output_shape=(512, 512)),
+        type='PointPillarsScatter', in_channels=128, output_shape=(512, 512)),
     pts_backbone=dict(
         type='SECOND',
         in_channels=64,
         out_channels=[64, 128, 256],
         layer_nums=[3, 5, 5],
         layer_strides=[2, 2, 2],
-        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        norm_cfg=dict(type='BN', requires_grad=True),
         conv_cfg=dict(type='Conv2d', bias=False),
         freeze_layers=True),
     pts_neck=dict(
@@ -67,20 +91,23 @@ model = dict(
         in_channels=[64, 128, 256],
         out_channels=[128, 128, 128],
         upsample_strides=[0.5, 1, 2],
-        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        norm_cfg=dict(type='BN', requires_grad=True),
         upsample_cfg=dict(type='deconv', bias=False),
         use_conv_for_no_stride=True,
         freeze_layers=True),
 
 
     #Fusion layer
-    fusion_module = dict(type='MultiHeadCrossAttentionNoNeck',
+    fusion_module = dict(type='MultiHeadCrossAttentionLessDownsample',
                          embed_dim = 512,
                          num_heads=1,
-                         dropout = 0.1,
-                         output_dim = 384,
-                         fuse_on_lidar=True,
-                         norm_cfg=dict(type='SyncBN', requires_grad=True)),
+                         dropout = 0.0,
+                         in_lidar_channels=512,
+                         in_cam_channels=512,
+                         output_dim = 512,
+                         norm_cfg=dict(type='SyncBN', requires_grad=True),
+                         one_d_norm = dict(type='SyncBN', requires_grad=True),
+                         ),
 
     bbox_head=dict(
         type='TransFusionHead',
@@ -98,8 +125,8 @@ model = dict(
         dropout=0.1,
         bn_momentum=0.1,
         activation='relu',
-        norm_cfg = dict(type='SyncBN', requires_grad=True),
-        two_d_norm_cfg=dict(type='SyncBN', requires_grad=True),
+        norm_cfg = dict(type='BN1d', requires_grad=True),
+        two_d_norm_cfg=dict(type='BN', requires_grad=True),
         common_heads=dict(center=(2, 2), height=(1, 2), dim=(3, 2), rot=(2, 2), vel=(2, 2)),
         bbox_coder=dict(
             type='TransFusionBBoxCoder',

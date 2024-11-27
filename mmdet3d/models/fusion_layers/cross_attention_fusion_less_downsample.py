@@ -193,7 +193,7 @@ class PositionEmbeddingLearned(nn.Module):
 
 @FUSION_LAYERS.register_module()
 class MultiHeadCrossAttentionLessDownsample(nn.Module):
-    def __init__(self, embed_dim = 512, num_heads=8, dropout = 0.1, in_cam_channels=384, in_lidar_channels=384, output_dim = 384, norm_cfg = None, one_d_norm = None):
+    def __init__(self, embed_dim = 512, num_heads=8, dropout = 0.1, in_cam_channels=384, in_lidar_channels=384, output_dim = 384, norm_cfg=dict(type='BN', requires_grad=True), one_d_norm = dict(type='BN1d', requires_grad=True)):
         super(MultiHeadCrossAttentionLessDownsample, self).__init__()
 
         self.embed_dim = embed_dim

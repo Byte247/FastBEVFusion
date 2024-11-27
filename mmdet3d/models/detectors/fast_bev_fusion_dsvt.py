@@ -34,6 +34,7 @@ class FastBEVFusionTransfusionheadDSVT(BaseDetector):
         seg_head=None,
         pts_voxel_encoder=None,
         pts_middle_encoder=None,
+        dsvt_backbone=None,
         pts_backbone=None,
         pts_neck=None,
         fusion_module=None,
@@ -58,6 +59,7 @@ class FastBEVFusionTransfusionheadDSVT(BaseDetector):
         self.pts_neck = builder.build_neck(pts_neck)
         
         self.pts_backbone = builder.build_backbone(pts_backbone)
+        self.dsvt_backbone = builder.build_backbone(dsvt_backbone)
 
         #Fusion
 
@@ -226,19 +228,24 @@ class FastBEVFusionTransfusionheadDSVT(BaseDetector):
 
         return x, None, features_2d
     
-    def extract_pts_feat(self, pts):
-        """Extract features of points."""
+    
+    def extract_pts_feat(self, points):
+        """Extract features from points."""
+        voxels, coors = self.voxelize(points)
+        voxel_features, feature_coors = self.pts_voxel_encoder(voxels,coors)
 
-        voxels, num_points, coors = self.voxelize(pts)
+        batch_size = feature_coors[-1, 0].item() + 1
+        pillar_features, voxel_coords = self.dsvt_backbone(voxel_features, feature_coors)
+    
 
-        voxel_features = self.pts_voxel_encoder(voxels, num_points, coors)
-        batch_size = coors[-1, 0] + 1
- 
-        x = self.pts_middle_encoder(voxel_features, coors, batch_size)
-       
-        x = self.pts_backbone(x)
+        x = self.pts_middle_encoder(pillar_features, voxel_coords, batch_size)
         
-        x = self.pts_neck(x)
+        if self.with_pts_backbone:
+            x = self.pts_backbone(x)
+
+        if self.with_pts_neck:
+            x = self.pts_neck(x)
+
 
         return x
     
@@ -251,23 +258,20 @@ class FastBEVFusionTransfusionheadDSVT(BaseDetector):
             points (list[torch.Tensor]): Points of each sample.
 
         Returns:
-            tuple[torch.Tensor]: Concatenated points, number of points
-                per voxel, and coordinates.
+            tuple[torch.Tensor]: Concatenated points and coordinates.
         """
-        voxels, coors, num_points = [], [], []
+        coors = []
+        # dynamic voxelization only provide a coors mapping
         for res in points:
-            res_voxels, res_coors, res_num_points = self.pts_voxel_layer(res)
-            voxels.append(res_voxels)
+            res_coors = self.pts_voxel_layer(res)
             coors.append(res_coors)
-            num_points.append(res_num_points)
-        voxels = torch.cat(voxels, dim=0)
-        num_points = torch.cat(num_points, dim=0)
+        points = torch.cat(points, dim=0)
         coors_batch = []
         for i, coor in enumerate(coors):
             coor_pad = F.pad(coor, (1, 0), mode='constant', value=i)
             coors_batch.append(coor_pad)
         coors_batch = torch.cat(coors_batch, dim=0)
-        return voxels, num_points, coors_batch
+        return points, coors_batch
 
 
 
@@ -391,12 +395,6 @@ class FastBEVFusionTransfusionheadDSVT(BaseDetector):
                     overall_2d_loss[key] = torch.zeros_like(overall_2d_loss[key])
                 overall_2d_loss[key] /= batch_size
 
-            # Check for NaN after normalization and handle it
-            for key in overall_2d_loss:
-                if torch.isnan(overall_2d_loss[key]).any():
-                    print(f"NaN detected in overall_2d_loss after normalization in {key}, replacing with zero.")
-                    overall_2d_loss[key] = torch.zeros_like(overall_2d_loss[key])
-
             # Update losses
             losses.update(overall_2d_loss)
             
@@ -462,7 +460,7 @@ class FastBEVFusionTransfusionheadDSVT(BaseDetector):
 
     def simple_test(self, img, img_metas, points):
         bbox_results = []
-        feature_bev, _, features_2d = self.extract_feat(img, img_metas, "test")
+        feature_bev, _, _ = self.extract_feat(img, img_metas, "test")
 
         lidar_features = self.extract_pts_feat(points)
 
