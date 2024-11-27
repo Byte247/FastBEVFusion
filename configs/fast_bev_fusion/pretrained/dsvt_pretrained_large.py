@@ -2,7 +2,9 @@ _base_ = [
     '../../_base_/datasets/nus-3d.py'
 ]
 
-point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
+point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+
+voxel_size = [0.2, 0.2, 8]
 
 out_size_factor = 2
 
@@ -12,7 +14,6 @@ class_names = [
     'motorcycle', 'pedestrian', 'traffic_cone', 'barrier'
 ]
 
-voxel_size = [0.3, 0.3, 8]
 model = dict(
     type='TransFusionHeadDSVT',
     pts_voxel_layer=dict(
@@ -32,7 +33,7 @@ model = dict(
         type='DSVT',
         model_cfg=dict(
             INPUT_LAYER=dict(
-                sparse_shape= [360, 360, 1],
+                sparse_shape= [512, 512, 1],
                 downsample_stride= [],
                 d_model= [128],
                 set_info= [[90, 4]],
@@ -47,12 +48,12 @@ model = dict(
             dim_feedforward= [256],
             dropout= 0.0,
             activation= "gelu",
-            output_shape= [360, 360],
+            output_shape= [512, 512],
             conv_out_channel= 128,
             freeze_layers = False)),
 
     pts_middle_encoder=dict(
-        type='PointPillarsScatter', in_channels=128, output_shape=(360, 360)),
+        type='PointPillarsScatter', in_channels=128, output_shape=(512, 512)),
 
     pts_backbone=dict(
         type='BaseBEVResBackbone',
@@ -101,7 +102,7 @@ model = dict(
     # model training and testing settings for the head
     train_cfg=dict(
             pts=dict(
-            grid_size=[360, 360, 1],
+            grid_size=[512, 512, 1],
             assigner=dict(
                 type='HungarianAssigner3D',
                 iou_calculator=dict(type='BboxOverlaps3D', coordinate='lidar'),
@@ -120,7 +121,7 @@ model = dict(
             point_cloud_range = point_cloud_range)),
      test_cfg=dict(
          pts=dict(
-            grid_size=[360, 360, 1],
+            grid_size=[512, 512, 1],
             post_center_limit_range=[-61.2, -61.2, -10.0, 61.2, 61.2, 10.0],
             max_per_img=500,
             max_pool_nms=False,
@@ -129,9 +130,9 @@ model = dict(
             pc_range=point_cloud_range[:2],
             out_size_factor=out_size_factor,
             voxel_size=voxel_size[:2],
-            nms_type='rotate', #nms_type='circle',
-            pre_maxsize=1000,
-            post_maxsize=83,
+            nms_type=None,
+            pre_max_size=1000,
+            post_max_size=100,
             nms_thr=0.2))
     )
 
@@ -263,7 +264,7 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=1,
+    samples_per_gpu=6,
     workers_per_gpu=1,
     train=dict(
          type='CBGSDataset',
