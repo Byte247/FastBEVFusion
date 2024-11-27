@@ -289,7 +289,7 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 
-lr = 1e-5
+lr = 1e-4
 
 optimizer = dict(type='AdamW', lr=lr,
                  weight_decay=0.05)
@@ -299,16 +299,14 @@ optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 
 # learning policy
 lr_config = dict(
-    policy='cyclic',
-    target_ratio=(10, lr),
-    cyclic_times=1,
-    step_ratio_up=0.2)
-momentum_config = dict(
-    policy='cyclic',
-    target_ratio=(0.95, 0.85),
-    cyclic_times=1,
-    step_ratio_up=0.2)
-
+    policy='poly',
+    warmup='linear',
+    warmup_iters=1000,
+    warmup_ratio=1e-6,
+    power=1.0,
+    min_lr=0,
+    by_epoch=False
+)
 # runtime settings
 runner = dict(type='EpochBasedRunner', max_epochs=20)
 
