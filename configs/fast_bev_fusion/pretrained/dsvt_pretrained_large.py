@@ -27,8 +27,7 @@ model = dict(
         feat_channels=[128, 128],
         with_distance=False,
         voxel_size=voxel_size,
-        point_cloud_range=point_cloud_range,
-        norm_cfg=dict(type='SyncBN', requires_grad=True)),
+        point_cloud_range=point_cloud_range),
     dsvt_backbone=dict(
         type='DSVT',
         model_cfg=dict(
