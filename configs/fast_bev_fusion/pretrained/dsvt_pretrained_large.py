@@ -289,7 +289,7 @@ input_modality = dict(
     use_map=False,
     use_external=False)
 
-lr = 1e-5
+lr = 1e-4
 
 optimizer = dict(type='AdamW', lr=lr,
                  weight_decay=0.05)
