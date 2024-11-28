@@ -227,6 +227,7 @@ def main():
         test_cfg=cfg.get('test_cfg'))
     
     if args.sync_bn:
+        print(f"USING SYNC BATCH NORM")
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         
     model.init_weights() #init weights from the load-from
