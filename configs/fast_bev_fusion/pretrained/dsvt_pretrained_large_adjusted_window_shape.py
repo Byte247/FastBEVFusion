@@ -6,7 +6,7 @@ point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 
 voxel_size = [0.2, 0.2, 8]
 
-out_size_factor = 4
+out_size_factor = 2
 
 # For nuScenes we usually do 10-class detection
 class_names = [
@@ -55,23 +55,13 @@ model = dict(
         type='PointPillarsScatter', in_channels=128, output_shape=(512, 512)),
 
     pts_backbone=dict(
-        type='SECOND',
-        in_channels=128,
-        out_channels=[64, 128, 256],
-        layer_nums=[3, 5, 5],
-        layer_strides=[2, 2, 2],
-        norm_cfg=dict(type='BN', requires_grad=True),
-        conv_cfg=dict(type='Conv2d', bias=False),
-        freeze_layers=False),
-    pts_neck=dict(
-        type='SECONDFPN',
-        in_channels=[64, 128, 256],
-        out_channels=[128, 128, 128],
-        upsample_strides=[0.5, 1, 2],
-        norm_cfg=dict(type='BN', requires_grad=True),
-        upsample_cfg=dict(type='deconv', bias=False),
-        use_conv_for_no_stride=True,
-        freeze_layers=False),
+        type='BaseBEVResBackbone',
+        input_channels = 128,
+        LAYER_NUMS=[ 1, 2, 2 ],
+        LAYER_STRIDES=[ 1, 2, 2 ],
+        NUM_FILTERS= [ 128, 128, 256 ],
+        UPSAMPLE_STRIDES= [ 0.5, 1, 2 ],
+        NUM_UPSAMPLE_FILTERS= [ 128, 128, 128 ]),
 
 
     bbox_head=dict(
@@ -200,7 +190,7 @@ train_pipeline = [
         file_client_args=file_client_args,
         pad_empty_sweeps=True),
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
-    dict(type='ObjectSample', db_sampler=db_sampler),
+    #dict(type='ObjectSample', db_sampler=db_sampler),
     dict(
         type='GlobalRotScaleTrans',
         rot_range=[-0.78539816, 0.78539816],
@@ -273,8 +263,8 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=4,
+    samples_per_gpu=3,
+    workers_per_gpu=1,
     train=dict(
          type='CBGSDataset',
          dataset=dict(
@@ -302,7 +292,7 @@ input_modality = dict(
 lr = 1e-4
 
 optimizer = dict(type='AdamW', lr=lr,
-                 weight_decay=0.7)
+                 weight_decay=0.05)
 
 # max_norm=10 is better for SECOND
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
@@ -320,7 +310,7 @@ lr_config = dict(
 )
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=15)
+runner = dict(type='EpochBasedRunner', max_epochs=20)
 
 
 
@@ -330,7 +320,7 @@ checkpoint_config = dict(interval=1)
 # For more loggers see
 # https://mmcv.readthedocs.io/en/latest/api.html#mmcv.runner.LoggerHook
 log_config = dict(
-    interval=1000,
+    interval=250,
     hooks=[
         dict(type='TextLoggerHook'),
         dict(type='TensorboardLoggerHook')
