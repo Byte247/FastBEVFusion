@@ -302,7 +302,7 @@ input_modality = dict(
 lr = 1e-4
 
 optimizer = dict(type='AdamW', lr=lr,
-                 weight_decay=0.05)
+                 weight_decay=0.7)
 
 # max_norm=10 is better for SECOND
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
