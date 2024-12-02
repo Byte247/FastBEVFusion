@@ -310,7 +310,7 @@ lr_config = dict(
 )
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=20)
+runner = dict(type='EpochBasedRunner', max_epochs=25)
 
 
 
