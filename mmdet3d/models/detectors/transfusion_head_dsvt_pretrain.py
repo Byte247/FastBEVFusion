@@ -75,7 +75,6 @@ class TransFusionHeadDSVT(MVXTwoStageDetector):
         return points, coors_batch
 
 
-    
     def extract_pts_feat(self, points, img_feats, img_metas):
         """Extract features from points."""
         voxels, coors = self.voxelize(points)
@@ -93,35 +92,8 @@ class TransFusionHeadDSVT(MVXTwoStageDetector):
         if self.with_pts_neck:
             x = self.pts_neck(x)
 
-
         return x
     
-    # @torch.no_grad()
-    # def voxelize(self, points):
-    #     """Apply dynamic voxelization to points.
-
-    #     Args:
-    #         points (list[torch.Tensor]): Points of each sample.
-
-    #     Returns:
-    #         tuple[torch.Tensor]: Concatenated points, number of points
-    #             per voxel, and coordinates.
-    #     """
-    #     voxels, coors, num_points = [], [], []
-    #     for res in points:
-    #         res_voxels, res_coors, res_num_points = self.pts_voxel_layer(res)
-    #         voxels.append(res_voxels)
-    #         coors.append(res_coors)
-    #         num_points.append(res_num_points)
-    #     voxels = torch.cat(voxels, dim=0)
-    #     num_points = torch.cat(num_points, dim=0)
-    #     coors_batch = []
-    #     for i, coor in enumerate(coors):
-    #         coor_pad = F.pad(coor, (1, 0), mode='constant', value=i)
-    #         coors_batch.append(coor_pad)
-    #     coors_batch = torch.cat(coors_batch, dim=0)
-    #     return voxels, num_points, coors_batch
-
     def forward_pts_train(self,
                           pts_feats,
                           gt_bboxes_3d,
