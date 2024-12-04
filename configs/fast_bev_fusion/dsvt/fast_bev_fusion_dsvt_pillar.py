@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # If point cloud range is changed, the models should also change their point cloud range accordingly
-point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
+point_cloud_range = [-54.0, -54.0, -5.0, 54.0, 54.0, 3.0]
 
-voxel_size = [0.2, 0.2, 8]
-out_size_factor = 4
+voxel_size = [0.3, 0.3, 8]
+out_size_factor = 2
 
 # For nuScenes we usually do 10-class detection
 class_names = [
@@ -14,7 +14,7 @@ class_names = [
 score_threshold = 0.0
 
 model = dict(
-    type='FastBEVFusionDSVTPillar',
+    type='FastBEVFusionDSVT',
     backbone=dict(
         type='ResNet',
         depth=50,
@@ -40,7 +40,7 @@ model = dict(
         is_transpose=False),
 
     #Point Modules:
-    pts_voxel_layer=dict(
+     pts_voxel_layer=dict(
         max_num_points=-1,
         point_cloud_range=point_cloud_range,
         voxel_size=voxel_size,
@@ -51,12 +51,13 @@ model = dict(
         feat_channels=[128, 128],
         with_distance=False,
         voxel_size=voxel_size,
-        point_cloud_range=point_cloud_range),
+        point_cloud_range=point_cloud_range,
+        norm_cfg=dict(type='SyncBN', requires_grad=True)),
     dsvt_backbone=dict(
         type='DSVT',
         model_cfg=dict(
             INPUT_LAYER=dict(
-                sparse_shape= [512, 512, 1],
+                sparse_shape= [360, 360, 1],
                 downsample_stride= [],
                 d_model= [128],
                 set_info= [[90, 4]],
@@ -71,38 +72,29 @@ model = dict(
             dim_feedforward= [256],
             dropout= 0.0,
             activation= "gelu",
-            output_shape= [512, 512],
+            output_shape= [360, 360],
             conv_out_channel= 128,
             freeze_layers = False)),
 
     pts_middle_encoder=dict(
-        type='PointPillarsScatter', in_channels=128, output_shape=(512, 512)),
+        type='PointPillarsScatter', in_channels=128, output_shape=(360, 360)),
+
     pts_backbone=dict(
-        type='SECOND',
-        in_channels=64,
-        out_channels=[64, 128, 256],
-        layer_nums=[3, 5, 5],
-        layer_strides=[2, 2, 2],
-        norm_cfg=dict(type='BN', requires_grad=True),
-        conv_cfg=dict(type='Conv2d', bias=False),
-        freeze_layers=True),
-    pts_neck=dict(
-        type='SECONDFPN',
-        in_channels=[64, 128, 256],
-        out_channels=[128, 128, 128],
-        upsample_strides=[0.5, 1, 2],
-        norm_cfg=dict(type='BN', requires_grad=True),
-        upsample_cfg=dict(type='deconv', bias=False),
-        use_conv_for_no_stride=True,
-        freeze_layers=True),
+        type='BaseBEVResBackbone',
+        input_channels = 128,
+        LAYER_NUMS=[ 1, 2, 2 ],
+        LAYER_STRIDES=[ 1, 2, 2 ],
+        NUM_FILTERS= [ 128, 128, 256 ],
+        UPSAMPLE_STRIDES= [ 0.5, 1, 2 ],
+        NUM_UPSAMPLE_FILTERS= [ 128, 128, 128 ]),
 
 
     #Fusion layer
     fusion_module = dict(type='MultiHeadCrossAttentionLessDownsample',
                          embed_dim = 512,
                          num_heads=1,
-                         dropout = 0.0,
-                         in_lidar_channels=512,
+                         dropout = 0.1,
+                         in_lidar_channels=384,
                          in_cam_channels=512,
                          output_dim = 512,
                          norm_cfg=dict(type='SyncBN', requires_grad=True),
@@ -111,9 +103,9 @@ model = dict(
 
     bbox_head=dict(
         type='TransFusionHead',
-        num_proposals=500,
+        num_proposals=200,
         auxiliary=True,
-        in_channels=384,
+        in_channels=512,
         hidden_channel=128,
         num_classes=len(class_names),
         num_decoder_layers=1,

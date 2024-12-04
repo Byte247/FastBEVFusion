@@ -20,7 +20,7 @@ import ipdb  # noqa
 
 
 @DETECTORS.register_module()
-class FastBEVFusionTransfusionheadDSVT(BaseDetector):
+class FastBEVFusionDSVT(BaseDetector):
     def __init__(
         self,
         backbone,
