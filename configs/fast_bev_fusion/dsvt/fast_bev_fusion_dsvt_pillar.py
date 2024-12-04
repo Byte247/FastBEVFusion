@@ -52,7 +52,8 @@ model = dict(
         with_distance=False,
         voxel_size=voxel_size,
         point_cloud_range=point_cloud_range,
-        norm_cfg=dict(type='SyncBN', requires_grad=True)),
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
+        freeze_layers=True),
     dsvt_backbone=dict(
         type='DSVT',
         model_cfg=dict(
@@ -74,7 +75,7 @@ model = dict(
             activation= "gelu",
             output_shape= [360, 360],
             conv_out_channel= 128,
-            freeze_layers = False)),
+            freeze_layers = True)),
 
     pts_middle_encoder=dict(
         type='PointPillarsScatter', in_channels=128, output_shape=(360, 360)),
@@ -86,7 +87,8 @@ model = dict(
         LAYER_STRIDES=[ 1, 2, 2 ],
         NUM_FILTERS= [ 128, 128, 256 ],
         UPSAMPLE_STRIDES= [ 0.5, 1, 2 ],
-        NUM_UPSAMPLE_FILTERS= [ 128, 128, 128 ]),
+        NUM_UPSAMPLE_FILTERS= [ 128, 128, 128 ],
+        freeze_layers=True),
 
 
     #Fusion layer
@@ -317,7 +319,7 @@ test_pipeline = [
 
 
 data = dict(
-    samples_per_gpu=1,
+    samples_per_gpu=2,
     workers_per_gpu=1,
     train=dict(
         type='CBGSDataset',
@@ -361,21 +363,20 @@ optimizer = dict(type='AdamW', lr=1e-4,
 
 
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+
+# learning policy
 lr_config = dict(
-     policy='cyclic',
-     target_ratio=(10, 1e-4),
-     cyclic_times=1,
-     step_ratio_up=0.3,
- )
-momentum_config = dict(
-    policy='cyclic',
-    target_ratio=(0.8947368421052632, 1),
-    cyclic_times=1,
-    step_ratio_up=0.3)
-
-
+    policy='poly',
+    warmup='linear',
+    warmup_iters=1000,
+    warmup_ratio=1e-6,
+    power=1.0,
+    min_lr=0,
+    by_epoch=False
+)
 # runtime settings
 runner = dict(type='EpochBasedRunner', max_epochs=20)
+
 
 #total_epochs = 20
 checkpoint_config = dict(interval=1)

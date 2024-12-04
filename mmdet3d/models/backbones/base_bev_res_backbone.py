@@ -53,7 +53,7 @@ class BasicBlock(nn.Module):
 
 @BACKBONES.register_module()
 class BaseBEVResBackbone(nn.Module):
-    def __init__(self, input_channels, LAYER_NUMS, LAYER_STRIDES, NUM_FILTERS, UPSAMPLE_STRIDES, NUM_UPSAMPLE_FILTERS):
+    def __init__(self, input_channels, LAYER_NUMS, LAYER_STRIDES, NUM_FILTERS, UPSAMPLE_STRIDES, NUM_UPSAMPLE_FILTERS, freeze_layers=False):
         super().__init__()
 
         layer_nums = LAYER_NUMS
@@ -61,6 +61,7 @@ class BaseBEVResBackbone(nn.Module):
         num_filters = NUM_FILTERS
         upsample_strides = UPSAMPLE_STRIDES
         num_upsample_filters = NUM_UPSAMPLE_FILTERS
+        self.freeze_layers = freeze_layers
 
 
         num_levels = len(layer_nums)
@@ -110,6 +111,14 @@ class BaseBEVResBackbone(nn.Module):
             ))
 
         self.num_bev_features = c_in
+
+        if self.freeze_layers:
+
+            for name, module in self.named_modules():
+
+                # Freeze the parameters
+                for param in module.parameters():
+                    param.requires_grad = False
 
     def forward(self, bev_features):
         """
