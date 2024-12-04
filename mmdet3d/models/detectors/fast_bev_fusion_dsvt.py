@@ -36,7 +36,6 @@ class FastBEVFusionDSVT(BaseDetector):
         pts_middle_encoder=None,
         dsvt_backbone=None,
         pts_backbone=None,
-        pts_neck=None,
         fusion_module=None,
         bbox_head_2d=None,
         train_cfg=None,
@@ -56,7 +55,6 @@ class FastBEVFusionDSVT(BaseDetector):
         self.pts_voxel_encoder = builder.build_voxel_encoder(pts_voxel_encoder)
         self.pts_middle_encoder= builder.build_middle_encoder(
                 pts_middle_encoder)
-        self.pts_neck = builder.build_neck(pts_neck)
         
         self.pts_backbone = builder.build_backbone(pts_backbone)
         self.dsvt_backbone = builder.build_backbone(dsvt_backbone)
@@ -240,11 +238,8 @@ class FastBEVFusionDSVT(BaseDetector):
 
         x = self.pts_middle_encoder(pillar_features, voxel_coords, batch_size)
         
-        if self.with_pts_backbone:
-            x = self.pts_backbone(x)
+        x = self.pts_backbone(x)
 
-        if self.with_pts_neck:
-            x = self.pts_neck(x)
 
 
         return x
