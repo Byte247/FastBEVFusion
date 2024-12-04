@@ -133,7 +133,7 @@ model = dict(
             pre_maxsize=1000,
             post_maxsize=83,
             nms_thr=0.2))
-    )
+)
 
 
 dataset_type = 'NuScenesDataset'

@@ -21,7 +21,7 @@ model = dict(
         num_stages=4,
         out_indices=(0, 1, 2, 3),
         frozen_stages=1,
-        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
         norm_eval=True,
         init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50'),
         style='pytorch',
@@ -30,7 +30,7 @@ model = dict(
     ),
     neck=dict(
         type='FPN',
-        norm_cfg=dict(type='BN', requires_grad=True),
+        norm_cfg=dict(type='SyncBN', requires_grad=True),
         in_channels=[256, 512, 1024, 2048],
         out_channels=64,
         num_outs=4),
@@ -40,7 +40,7 @@ model = dict(
         is_transpose=False),
 
     #Point Modules:
-     pts_voxel_layer=dict(
+    pts_voxel_layer=dict(
         max_num_points=-1,
         point_cloud_range=point_cloud_range,
         voxel_size=voxel_size,
@@ -74,8 +74,7 @@ model = dict(
             dropout= 0.0,
             activation= "gelu",
             output_shape= [360, 360],
-            conv_out_channel= 128,
-            freeze_layers = True)),
+            conv_out_channel= 128)),
 
     pts_middle_encoder=dict(
         type='PointPillarsScatter', in_channels=128, output_shape=(360, 360)),
@@ -210,7 +209,6 @@ model = dict(
             pre_maxsize=1000,
             post_maxsize=83,
             nms_thr=0.2)
-            
 )
 
 
