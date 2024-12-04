@@ -74,7 +74,8 @@ model = dict(
             dropout= 0.0,
             activation= "gelu",
             output_shape= [360, 360],
-            conv_out_channel= 128)),
+            conv_out_channel= 128,
+            freeze_layers=True)),
 
     pts_middle_encoder=dict(
         type='PointPillarsScatter', in_channels=128, output_shape=(360, 360)),
