@@ -181,7 +181,7 @@ class MultiHeadCrossAttentionDSVT(nn.Module):
         self.pos_embed_camera = nn.Parameter(torch.randn(1, self.embed_dim, 4096) * .02) #done as in ViT: https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py, (14 (image hight) * 25 image width * 6 images) / 16 (image patches)
         self.pos_embed_lidar = nn.Parameter(torch.randn(1, self.embed_dim, 4096) * .02) #done as in ViT: https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py, no reduction for now
 
-        self.upsample_layer = nn.ConvTranspose2d(embed_dim, output_dim, kernel_size=4, stride=4) # match centerpoint
+        self.upsample_layer = nn.ConvTranspose2d(embed_dim, output_dim, kernel_size=2, stride=2) # match centerpoint
         if norm_cfg is None:
             self.upsample_layer_norm = nn.BatchNorm2d(output_dim)
         else:
@@ -266,8 +266,6 @@ class MultiHeadCrossAttentionDSVT(nn.Module):
         output = F.interpolate(output, size=(90, 90), mode='bilinear', align_corners=False)
 
         output = self.upsample_layer_act(self.upsample_layer_norm(self.upsample_layer(output)))
-
-        print(f"output: {output.shape}")
 
         
         return [output]
