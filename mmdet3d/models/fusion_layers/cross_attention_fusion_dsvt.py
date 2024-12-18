@@ -165,7 +165,7 @@ class MultiHeadCrossAttentionDSVT(nn.Module):
 
         self.reduce_lidar_channel_0 = ConvBNReLU(in_lidar_channels, self.embed_dim, kernel_size=3, stride=2, padding=1, norm_cfg = self.norm_cfg)
         self.lidar_0 = ConvBNReLU(self.embed_dim, self.embed_dim, kernel_size=3, stride=1, padding=1, norm_cfg = self.norm_cfg)
-        self.reduce_lidar_channel_1 = ConvBNReLU(in_lidar_channels, self.embed_dim, kernel_size=3, stride=2, padding=1, norm_cfg = self.norm_cfg)
+        self.reduce_lidar_channel_1 = ConvBNReLU(self.embed_dim, self.embed_dim, kernel_size=3, stride=2, padding=1, norm_cfg = self.norm_cfg)
         self.lidar_1 = ConvBNReLU(self.embed_dim, self.embed_dim, kernel_size=3, stride=1, padding=1, norm_cfg = self.norm_cfg)
         self.fuse_on_lidar = fuse_on_lidar
 
