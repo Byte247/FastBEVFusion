@@ -100,7 +100,6 @@ model = dict(
                          in_cam_channels=384,
                          output_dim = 384,
                          norm_cfg=dict(type='SyncBN', requires_grad=True),
-                         one_d_norm = dict(type='SyncBN', requires_grad=True),
                          ),
 
     bbox_head=dict(
