@@ -234,9 +234,9 @@ class MultiHeadCrossAttentionDSVT(nn.Module):
         camera_bev_features = camera_bev_features[0]
         
         lidar_bev_features = self.reduce_lidar_channel_0(original_lidar_bev_features)
-        lidar_bev_features = self.lidar_0(original_lidar_bev_features)
-        lidar_bev_features = self.reduce_lidar_channel_1(original_lidar_bev_features)
-        lidar_bev_features = self.lidar_1(original_lidar_bev_features)
+        lidar_bev_features = self.lidar_0(lidar_bev_features)
+        lidar_bev_features = self.reduce_lidar_channel_1(lidar_bev_features)
+        lidar_bev_features = self.lidar_1(lidar_bev_features)
 
         #get to 64x64
         lidar_bev_features = F.interpolate(lidar_bev_features, size=(64, 64), mode='bilinear', align_corners=False)
