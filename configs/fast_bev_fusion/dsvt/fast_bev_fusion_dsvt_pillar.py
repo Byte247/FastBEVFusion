@@ -92,7 +92,7 @@ model = dict(
 
 
     #Fusion layer
-    fusion_module = dict(type='MultiHeadCrossAttentionLessDownsample',
+    fusion_module = dict(type='MultiHeadCrossAttentionDSVT',
                          embed_dim = 512,
                          num_heads=1,
                          dropout = 0.1,
