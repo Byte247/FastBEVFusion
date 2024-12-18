@@ -230,10 +230,10 @@ class MultiHeadCrossAttentionDSVT(nn.Module):
     
     def forward(self, lidar_bev_features, camera_bev_features):
         
-        original_lidar_bev_features = lidar_bev_features[0]
+        lidar_bev_features = lidar_bev_features[0]
         camera_bev_features = camera_bev_features[0]
         
-        lidar_bev_features = self.reduce_lidar_channel_0(original_lidar_bev_features)
+        lidar_bev_features = self.reduce_lidar_channel_0(lidar_bev_features)
         lidar_bev_features = self.lidar_0(lidar_bev_features)
         lidar_bev_features = self.reduce_lidar_channel_1(lidar_bev_features)
         lidar_bev_features = self.lidar_1(lidar_bev_features)
@@ -263,7 +263,7 @@ class MultiHeadCrossAttentionDSVT(nn.Module):
         output = output.view(output.shape[0], output.shape[1], 64, 64)  # Shape: [batch * 6, 512, 64, 64]
 
         #reshape to 90x90
-        output = F.interpolate(lidar_bev_features, size=(90, 90), mode='bilinear', align_corners=False)
+        output = F.interpolate(output, size=(90, 90), mode='bilinear', align_corners=False)
 
         output = self.upsample_layer_act(self.upsample_layer_norm(self.upsample_layer(output)))
 
