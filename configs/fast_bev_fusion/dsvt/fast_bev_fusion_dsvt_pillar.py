@@ -351,7 +351,7 @@ data = dict(
         test_mode=True,
         box_type_3d='LiDAR'))
 
-optimizer = dict(type='AdamW', lr=1e-4,
+optimizer = dict(type='AdamW', lr=1e-6,
                   weight_decay=0.01,
                   paramwise_cfg=dict(
                   custom_keys={'backbone': dict(lr_mult=0.1, decay_mult=1.0),
@@ -367,13 +367,13 @@ lr_config = dict(
     policy='poly',
     warmup='linear',
     warmup_iters=1000,
-    warmup_ratio=1e-6,
+    warmup_ratio=1e-8,
     power=1.0,
     min_lr=0,
     by_epoch=False
 )
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=20)
+runner = dict(type='EpochBasedRunner', max_epochs=10)
 
 
 #total_epochs = 20
